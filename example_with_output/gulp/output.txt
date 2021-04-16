@@ -1,0 +1,53 @@
+################################################################################
+#										 #
+#			   Flexible Unit Structure Engine			 #
+#				     (FUSE)					 #
+#				     v1.04					 #
+#										 #
+################################################################################
+
+
+Input formula = SrTiO3
+Maximum number of formula units = 4
+Ionic input formula
+ap calculated to be: 4.6261 Angstroms
+Search routine: Basin Hopping
+
+############################ Generating Initial Population ############################
+
+I      1       -31.7167	  eV/atom
+I      2       -31.2033	  eV/atom
+I      3       -31.7167	  eV/atom
+I      4       -31.7167	  eV/atom
+I      5          5e+18	  eV/atom
+Initial population completed
+
+Lowest energy initial structure: 1 , -31.716709 eV/atom
+
+################################# Basin Hopping search ##################################
+
+
+Current lowest energy structure: 0 , -31.716709 eV/atom
+
+BH      1     	 -31.7167   eV/atom
+Generation completed: E = -3.17167e+01 dE vs. global =  0.0000e+00 r:    1  T = 0.02000
+
+BH      2     	 -31.7167   eV/atom
+Generation completed: E = -3.17167e+01 dE vs. global =  0.0000e+00 r:    2  T = 0.02000
+
+BH      3      	 -31.037   eV/atom
+Generation completed: E = -3.10370e+01 dE vs. global =  6.7975e-01 r:    3  T = 0.02000
+
+BH      4     	 -31.7167   eV/atom
+Generation completed: E = -3.17167e+01 dE vs. global =  0.0000e+00 r:    4  T = 0.02000
+
+BH      5     	 -31.7167   eV/atom
+Generation completed: E = -3.17167e+01 dE vs. global =  0.0000e+00 r:    5  T = 0.02000
+
+
+*** Max number of steps reached stopping calculation ***
+Current Global minimum energy: -31.716709 Structure: 0
+Writing restart files...
+
+
+total time: 0:00:26.516080 hours:minutes:seconds
