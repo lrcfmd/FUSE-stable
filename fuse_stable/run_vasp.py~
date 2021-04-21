@@ -30,6 +30,18 @@ def run_vasp(atoms='',vasp_opts='',kcut='',produce_steps=''):
 	new_atoms=atoms.copy()
 	for i in range(len(list(vasp_opts.keys()))):
 
+		temp_atoms=new_atoms.repeat([2,2,2])
+	        temp1=temp_atoms.get_all_distances()
+	        temp2=[]
+	        for i in range(len(temp1)):
+        	        for j in range(len(temp1[i])):
+                	        if temp1[i][j] != 0:
+                        	        temp2.append(temp1[i][j])
+		
+		if min(temp2) <= 1.0:
+			continue
+
+
 		if len(kcut) >= 2:
 			temp_kcut=kcut[i]
 		else:
