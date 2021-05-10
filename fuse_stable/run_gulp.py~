@@ -137,7 +137,7 @@ def run_gulp(atoms='',shel=None,kwds='',opts='',lib='',produce_steps='',
 						if "Total lattice energy" in j:
 							if "eV" in j:
 								e_line=j
-					energy = float(e_line[e_line.index('-'):e_line.index('eV')-1])
+					energy = float(e_line[e_line.index('-'):-4])
 					atoms = read_gulp("temp.res")
 				
 				if 'sing' not in kwds[i]:
@@ -147,7 +147,7 @@ def run_gulp(atoms='',shel=None,kwds='',opts='',lib='',produce_steps='',
 								e_line=j
 								break
 						
-						energy = float(e_line[e_line.index('-'):e_line.index('eV')-1])
+						energy=float(e_line[e_line.index('-'):-4])
 						
 						atoms=read_gulp("temp.res")
 						
