@@ -27,14 +27,6 @@ from fuse106.run_multiple_calculators import run_calculators
 from fuse106.generate_random_structure import generate_random_structure
 import pandas
 
-#-------------------------------------------------------------------------------
-#Known issues / to do list:
-# - Currently the neutral input formula type does not work with the GA, by the looks
-# of it, I never built the function for it! Need to mimic how it is done for ionic
-# for neutral (removing the parts which split the structures into anions and cations
-#
-#
-#-------------------------------------------------------------------------------
 
 warnings.filterwarnings("ignore") # currently use this as python raises RuntimeError 
 # warnings when a physically unreasonable unit cell is generated, this is caught
