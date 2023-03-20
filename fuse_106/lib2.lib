@@ -1,0 +1,19 @@
+species    
+Ti     core    4.000000                   
+Sr     core    2.000000                   
+O      core   -2.000000      
+Y 	   core    3
+Ba core 0.169
+Ba shel 1.831
+buck     
+O     core Sr    core  1952.390 0.33685 19.22000      1.20 12.00  
+buck                                                                      
+O     core Ti    core  4590.7279     0.261000  0.0000000      1.20 12.00  
+buck                                                                      
+O     core O     core  1388.77     0.36262  175      1.20 12.00  
+buck
+Y core O core 23000 0.24203 0.0 1.2 12.0
+buck
+Ba shel O core 4818 0.3067 0.0 1.2 12.0
+spring
+Ba core 34.05
