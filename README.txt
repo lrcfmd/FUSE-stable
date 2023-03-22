@@ -1,9 +1,23 @@
-Last Updated: 16th April 2021
+Last Updated: 22nd March 2023
 
 This is the current stable version of FUSE, originally published in this paper: and is provided "as is" under the GNU public licence
 
-
 https://pubs.rsc.org/en/content/articlelanding/2018/fd/c8fd00045j#!divAbstract
+********************************************************************************
+There are now three stable versions of FUSE available:
+
+102: The python3 implementation of the code presented in the original paper linked above
+
+104: The main change to the code is the implementation of searches with compositions without needing to specify oxidation states,
+this results in FUSE treating all atoms in the same way, and is useful in systems where the number of cations greatly outnumbers 
+the number of anions
+
+106: The main changes from 104 above, is that the random structure generation has been re-written such that FUSE now samples more
+evenly from the number of available formular units, where as previously it was (un-intentionally) biased towards the smaller numbers
+of formula units. With the Basin hopping moves, the search routine has been altered such that when a chosen move fails to generate a valid
+structure, FUSE will attempt the same move several more times before choosing a different move. In order to offer more control over move 1 (swapping
+atoms between sub-modules), this has now been split into three moves (1, 8 and 9) where 1 = swap two atoms, 8 = swap 3 -> n atoms and 9 = swap all 
+atoms.
 
 ********************************************************************************
 
