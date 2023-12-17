@@ -36,7 +36,9 @@ If there is a currently un-supported calculator that you would like to use, plea
 
 you can then install FUSE by typing:
 
-python setup.py install
+python -m pip install . 
+
+in the root directory for FUSE.
 
 **********************************************************************************
 
