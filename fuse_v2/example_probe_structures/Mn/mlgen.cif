@@ -1,0 +1,27 @@
+data_image0
+_chemical_formula_structural       Mn2
+_chemical_formula_sum              "Mn2"
+_cell_length_a       4.70652
+_cell_length_b       2.47442
+_cell_length_c       2.47761
+_cell_angle_alpha    119.972
+_cell_angle_beta     105.232
+_cell_angle_gamma    58.2768
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Mn  Mn1       1.0  0.25981  0.58352  0.67027  1.0000
+  Mn  Mn2       1.0  0.75956  0.41257  0.33364  1.0000

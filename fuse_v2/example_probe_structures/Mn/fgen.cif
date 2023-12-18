@@ -1,0 +1,37 @@
+data_image0
+_chemical_formula_structural       Mn12
+_chemical_formula_sum              "Mn12"
+_cell_length_a       4.29752
+_cell_length_b       5.86248
+_cell_length_c       5.86344
+_cell_angle_alpha    86.1302
+_cell_angle_beta     68.5674
+_cell_angle_gamma    68.568
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Mn  Mn1       1.0  0.83397  0.95626  0.70533  1.0000
+  Mn  Mn2       1.0  0.16725  0.12306  0.87166  1.0000
+  Mn  Mn3       1.0  0.50245  0.70799  0.95715  1.0000
+  Mn  Mn4       1.0  0.83423  0.45591  0.20521  1.0000
+  Mn  Mn5       1.0  0.83542  0.37461  0.62399  1.0000
+  Mn  Mn6       1.0  0.50240  0.20760  0.45682  1.0000
+  Mn  Mn7       1.0  0.50047  0.28955  0.03880  1.0000
+  Mn  Mn8       1.0  0.83607  0.87423  0.12337  1.0000
+  Mn  Mn9       1.0  0.16874  0.04126  0.29039  1.0000
+  Mn  Mn10      1.0  0.50111  0.78962  0.53821  1.0000
+  Mn  Mn11      1.0  0.16746  0.62282  0.37200  1.0000
+  Mn  Mn12      1.0  0.16941  0.54131  0.78993  1.0000

@@ -3,6 +3,11 @@ Last Updated: 22nd March 2023
 This is the current stable version of FUSE, originally published in this paper: and is provided "as is" under the GNU public licence
 
 https://pubs.rsc.org/en/content/articlelanding/2018/fd/c8fd00045j#!divAbstract
+
+the below readme is for version 1 of the code.
+
+Version 2, located in the fuse_v2 folder has it's own readme and install instructions.
+
 ********************************************************************************
 There are now three stable versions of FUSE available:
 

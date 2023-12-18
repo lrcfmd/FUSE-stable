@@ -1,0 +1,32 @@
+data_image0
+_chemical_formula_structural       BrLi4ClO
+_chemical_formula_sum              "Br1 Li4 Cl1 O1"
+_cell_length_a       3.88596
+_cell_length_b       3.88352
+_cell_length_c       7.24876
+_cell_angle_alpha    105.547
+_cell_angle_beta     105.131
+_cell_angle_gamma    90.0021
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Br  Br1       1.0  0.85388  0.00802  0.81977  1.0000
+  Li  Li1       1.0  0.63116  0.81012  0.42333  1.0000
+  Li  Li2       1.0  0.01149  0.67159  0.14707  1.0000
+  Li  Li3       1.0  0.37203  0.52661  0.85724  1.0000
+  Li  Li4       1.0  0.51304  0.17181  0.14759  1.0000
+  Cl  Cl1       1.0  0.16085  0.31242  0.42849  1.0000
+  O   O1        1.0  0.50984  0.66827  0.14042  1.0000

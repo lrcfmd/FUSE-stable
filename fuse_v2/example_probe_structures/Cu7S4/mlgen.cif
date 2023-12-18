@@ -1,0 +1,36 @@
+data_image0
+_chemical_formula_structural       Cu7S4
+_chemical_formula_sum              "Cu7 S4"
+_cell_length_a       3.79317
+_cell_length_b       6.66236
+_cell_length_c       7.76634
+_cell_angle_alpha    80.1184
+_cell_angle_beta     78.3461
+_cell_angle_gamma    89.597
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Cu  Cu1       1.0  0.36263  0.82848  0.08938  1.0000
+  Cu  Cu2       1.0  0.20581  0.91863  0.43150  1.0000
+  Cu  Cu3       1.0  0.71863  0.41839  0.38293  1.0000
+  Cu  Cu4       1.0  0.79979  0.04914  0.20671  1.0000
+  Cu  Cu5       1.0  0.30389  0.58286  0.62732  1.0000
+  Cu  Cu6       1.0  0.87744  0.36515  0.91585  1.0000
+  Cu  Cu7       1.0  0.43270  0.89991  0.75969  1.0000
+  S   S1        1.0  0.22662  0.60064  0.35007  1.0000
+  S   S2        1.0  0.68150  0.08807  0.48882  1.0000
+  S   S3        1.0  0.88820  0.02638  0.92557  1.0000
+  S   S4        1.0  0.38315  0.55027  0.90013  1.0000

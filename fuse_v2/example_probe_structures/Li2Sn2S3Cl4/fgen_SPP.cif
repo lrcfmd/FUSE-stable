@@ -1,0 +1,36 @@
+data_image0
+_chemical_formula_structural       ClSnLi2SnSClSClSCl
+_chemical_formula_sum              "Cl4 Sn2 Li2 S3"
+_cell_length_a       7.15726
+_cell_length_b       3.96009
+_cell_length_c       12.3588
+_cell_angle_alpha    79.4057
+_cell_angle_beta     90.9045
+_cell_angle_gamma    76.0709
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Cl  Cl1       1.0  0.92474  0.04163  0.95401  1.0000
+  Sn  Sn1       1.0  0.11553  0.85305  0.12066  1.0000
+  Li  Li1       1.0  0.88598  0.34137  0.32271  1.0000
+  Li  Li2       1.0  0.48124  0.98552  0.84154  1.0000
+  Sn  Sn2       1.0  0.27047  0.63910  0.53908  1.0000
+  S   S1        1.0  0.92449  0.53027  0.49712  1.0000
+  Cl  Cl2       1.0  0.78729  0.94255  0.22463  1.0000
+  S   S2        1.0  0.08738  0.16903  0.63062  1.0000
+  Cl  Cl3       1.0  0.50016  0.52969  0.74612  1.0000
+  S   S3        1.0  0.20410  0.24936  0.23333  1.0000
+  Cl  Cl4       1.0  0.41903  0.75633  0.02552  1.0000

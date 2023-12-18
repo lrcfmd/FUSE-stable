@@ -1,0 +1,31 @@
+data_image0
+_chemical_formula_structural       ClWCl3W
+_chemical_formula_sum              "Cl4 W2"
+_cell_length_a       3.15304
+_cell_length_b       6.85989
+_cell_length_c       8.24011
+_cell_angle_alpha    87.0907
+_cell_angle_beta     71.031
+_cell_angle_gamma    91.5327
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Cl  Cl1       1.0  0.04681  0.98586  0.84229  1.0000
+  W   W1        1.0  0.34323  0.95977  0.07982  1.0000
+  Cl  Cl2       1.0  0.49079  0.46486  0.92809  1.0000
+  Cl  Cl3       1.0  0.58282  0.24133  0.40984  1.0000
+  Cl  Cl4       1.0  0.66610  0.79511  0.27623  1.0000
+  W   W2        1.0  0.28511  0.26384  0.17141  1.0000

@@ -1,0 +1,37 @@
+data_image0
+_chemical_formula_structural       TiO2CaO3TiCaO2Ca
+_chemical_formula_sum              "Ti2 O7 Ca3"
+_cell_length_a       3.88828
+_cell_length_b       3.96578
+_cell_length_c       10.1526
+_cell_angle_alpha    101.267
+_cell_angle_beta     101.034
+_cell_angle_gamma    89.999
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Ti  Ti1       1.0  0.19345  0.92195  0.13606  1.0000
+  O   O1        1.0  0.19710  0.45382  0.13858  1.0000
+  O   O2        1.0  0.69624  0.96178  0.14113  1.0000
+  Ca  Ca1       1.0  0.79309  0.45464  0.33912  1.0000
+  O   O3        1.0  0.29273  0.08294  0.33877  1.0000
+  O   O4        1.0  0.38837  0.65134  0.53897  1.0000
+  O   O5        1.0  0.88920  0.15495  0.53626  1.0000
+  Ti  Ti2       1.0  0.39173  0.12263  0.54145  1.0000
+  Ca  Ca2       1.0  0.97501  0.69057  0.70876  1.0000
+  O   O6        1.0  0.49251  0.27643  0.73909  1.0000
+  O   O7        1.0  0.09382  0.87928  0.93825  1.0000
+  Ca  Ca3       1.0  0.60930  0.31990  0.96875  1.0000

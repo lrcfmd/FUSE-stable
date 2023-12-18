@@ -1,0 +1,31 @@
+data_image0
+_chemical_formula_structural       CoAs4Co
+_chemical_formula_sum              "Co2 As4"
+_cell_length_a       7.56388
+_cell_length_b       3.52167
+_cell_length_c       4.44466
+_cell_angle_alpha    89.7501
+_cell_angle_beta     108.994
+_cell_angle_gamma    62.2448
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Co  Co1       1.0  0.51864  0.77179  0.08680  1.0000
+  As  As1       1.0  0.67857  0.61007  0.67176  1.0000
+  As  As2       1.0  0.78187  0.00685  0.23989  1.0000
+  As  As3       1.0  0.17889  0.10554  0.15252  1.0000
+  As  As4       1.0  0.28156  0.51143  0.75917  1.0000
+  Co  Co2       1.0  0.94183  0.84510  0.82488  1.0000

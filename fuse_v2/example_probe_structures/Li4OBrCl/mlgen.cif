@@ -1,0 +1,39 @@
+data_image0
+_chemical_formula_structural       LiOLiClLi2ClLiOLiBrLi2Br
+_chemical_formula_sum              "Li8 O2 Cl2 Br2"
+_cell_length_a       3.89496
+_cell_length_b       3.89375
+_cell_length_c       13.288
+_cell_angle_alpha    90.0761
+_cell_angle_beta     89.8754
+_cell_angle_gamma    89.9955
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Li  Li1       1.0  0.78108  0.50611  0.07067  1.0000
+  O   O1        1.0  0.78345  0.00606  0.07063  1.0000
+  Li  Li2       1.0  0.28160  0.00612  0.07013  1.0000
+  Cl  Cl1       1.0  0.29597  0.50687  0.21779  1.0000
+  Li  Li3       1.0  0.76694  0.00621  0.21328  1.0000
+  Li  Li4       1.0  0.27861  0.50604  0.40749  1.0000
+  Cl  Cl2       1.0  0.79273  0.01016  0.40368  1.0000
+  Li  Li5       1.0  0.28224  0.01048  0.55032  1.0000
+  O   O2        1.0  0.28391  0.51038  0.55030  1.0000
+  Li  Li6       1.0  0.78272  0.51219  0.55022  1.0000
+  Br  Br1       1.0  0.78335  0.00983  0.71028  1.0000
+  Li  Li7       1.0  0.28177  0.51131  0.69396  1.0000
+  Li  Li8       1.0  0.78518  0.00390  0.92679  1.0000
+  Br  Br2       1.0  0.28459  0.50576  0.91136  1.0000

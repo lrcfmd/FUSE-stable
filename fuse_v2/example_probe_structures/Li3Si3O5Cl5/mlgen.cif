@@ -1,0 +1,41 @@
+data_image0
+_chemical_formula_structural       Li3ClOSiClO2SiO2Cl2SiCl
+_chemical_formula_sum              "Li3 Cl5 O5 Si3"
+_cell_length_a       5.32129
+_cell_length_b       8.47823
+_cell_length_c       9.24096
+_cell_angle_alpha    117.003
+_cell_angle_beta     95.4168
+_cell_angle_gamma    102.388
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Li  Li1       1.0  0.94433  0.04688  0.84129  1.0000
+  Li  Li2       1.0  0.96604  0.35839  0.58738  1.0000
+  Li  Li3       1.0  0.58381  0.82487  0.53032  1.0000
+  Cl  Cl1       1.0  0.93643  0.12760  0.63921  1.0000
+  O   O1        1.0  0.42760  0.59879  0.83319  1.0000
+  Si  Si1       1.0  0.07279  0.60923  0.22960  1.0000
+  Cl  Cl2       1.0  0.51597  0.38702  0.49686  1.0000
+  O   O2        1.0  0.71676  0.81139  0.72448  1.0000
+  O   O3        1.0  0.25887  0.67622  0.39933  1.0000
+  Si  Si2       1.0  0.65644  0.62589  0.73155  1.0000
+  O   O4        1.0  0.19986  0.63163  0.08110  1.0000
+  O   O5        1.0  0.92516  0.58107  0.79461  1.0000
+  Cl  Cl3       1.0  0.87101  0.32248  0.11162  1.0000
+  Cl  Cl4       1.0  0.29736  0.96123  0.02468  1.0000
+  Si  Si3       1.0  0.20831  0.67913  0.93264  1.0000
+  Cl  Cl5       1.0  0.77794  0.73685  0.24706  1.0000
