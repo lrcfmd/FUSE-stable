@@ -1,4 +1,4 @@
-from fuse201.all import *
+from fuse202.all import *
 
 run_fuse(
 
