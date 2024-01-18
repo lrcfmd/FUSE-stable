@@ -125,11 +125,11 @@ use_spglib=True, # if True, everytime an atoms object is generated, tidy up the 
 
 #variables used to run ML structure generation:
 #gn boss model for structure generation
-generate_gn_boss_structures=False, # if set to true, when FUSE is firt launched, it will run gn-boss to generate the pool of refe22rennce structures for this calculation.
-gn_boss_command="", # For my machine, I've setup gn-boss in a seperate python environment, this is the command for that version of python
+generate_gn_boss_structures=False, # if set to true, when FUSE is firt launched, it will run gn-boss to generate the pool of referennce structures for this calculation.
+gn_boss_command=r"C:\ProgramData\anaconda3\_conda.exe run -p C:\ProgramData\anaconda3\envs\ML_FUSE python .\get_cifs_for_FUSE.py", # For my machine, I've setup gn-boss in a seperate python environment, this is the command for that version of python
 gn_search='tpe', # 'rand' random search, 'tpe' baysian opt, 'pso' particle swarm
 gn_max_step=500, # number of generation attempts for gn-boss
-gn_template_path=os.environ['GNBOSS_TEMP'], #path to template files for using gn-boss 
+gn_template_path=r'C:\Users\cc0u5\Documents\csp_installs\ML-FUSE\template', #path to template files for using gn-boss 
 gn_zn_range=[1,4], # numbers of formula units to scan with GN-BOSS for generating structures
 rank_gn_structures='single', #if None; do not rank structures, this should only be set if pull_random = True above, if 'opti' rank with SPPs AFTER geometry optimising the, if 'sing' rank based on single point calculations with SPPs. 
 clear_previous_gn_structures=False, #if set to True, before starting the calcluation, remove any previous structures from reference structures & gn-boss generated_results.
@@ -173,7 +173,7 @@ gulp_command='gulp < gulp.gin > gulp.got', # system command used to run gulp
 gulp_timeout='', # timeout command for running GULP, note only works in Windows!
 calcs='',# list to tell FUSE which calculators to use and in which order
 assemble_spp_=False, # if set to True, collate the spp potential library for the calculation
-spp_path=os.environ['SPP_PATH'], #path to spp potential libraries
+spp_path=r"C:\Users\cc0u5\Documents\SPP_library\SPP", #path to spp potential libraries
 #VASP:
 vasp_opts='', # options for each Vasp calculation
 kcut=30, # parameter for number of kpoints, higher number = more kpoints, just set to 1 if using KSPACING flag in VASP
@@ -189,7 +189,6 @@ relaxer_opts={
 },
 opt_class=['FIRE','BFGSLineSearch'],
 opt_device='cpu', #Device to use for chgnet optimisation, 'cpu' or 'cuda'
-mode='relax' # set the calculation mode for chgnet, other option is 'single'
 ):
 	t0=time.time()
 ################################################################################
@@ -659,8 +658,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 						
 				#print(r_elements)
 				#sys.exit()
-				if assemble_spp_ == True:
-					assemble_spp(r_elements,spp_path=spp_path)
+				assemble_spp(r_elements,spp_path=spp_path)
 				
 				print("Ranking structures from Gn-Boss ML model using SPPs")
 				o.write("\nRanking structures from Gn-Boss ML model using SPPs")
@@ -692,7 +690,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 							kwds=r_kwds,gulp_opts=r_gulp_opts,lib=r_lib,calcs=r_calcs,dist_cutoff=dist_cutoff,qe_opts=qe_opts,
 							gulp_command=gulp_command,gulp_timeout=gulp_timeout,
 							n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,
-							opt_device=opt_device,mode=rank_gn_structures,mode=mode)
+							opt_device=opt_device,mode=rank_gn_structures)
 							
 						except:
 							converged = False
@@ -1157,7 +1155,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		
 		if ctype == 'chgnet':
 			try:
-				atoms,energy,converged = run_chgnet(atoms,n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,opt_device=opt_device,use_spglib=use_spglib,mode=mode)
+				atoms,energy,converged = run_chgnet(atoms,n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,opt_device=opt_device,use_spglib=use_spglib)
 				
 			except:
 				converged=False
@@ -1171,7 +1169,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 				kwds=kwds,gulp_opts=gulp_opts,lib=lib,calcs=calcs,dist_cutoff=dist_cutoff,qe_opts=qe_opts,
 				gulp_command=gulp_command,gulp_timeout=gulp_timeout,
 				n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,
-				opt_device=opt_device,mode=mode)
+				opt_device=opt_device)
 				
 			except:
 				converged = False
@@ -1500,7 +1498,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 
 				if ctype == 'chgnet':
 					try:
-						atoms,energy,converged = run_chgnet(atoms,n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,opt_device=opt_device,mode=mode)
+						atoms,energy,converged = run_chgnet(atoms,n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,opt_device=opt_device)
 						
 					except:
 						converged=False
@@ -1515,7 +1513,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 						kwds=kwds,gulp_opts=gulp_opts,lib=lib,calcs=calcs,dist_cutoff=dist_cutoff,qe_opts=qe_opts,
 						gulp_command=gulp_command,gulp_timeout=gulp_timeout,
 						n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,
-						opt_device=opt_device,mode=mode)
+						opt_device=opt_device)
 						
 					except:
 						converged = False
