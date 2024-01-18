@@ -9,7 +9,7 @@ https://chemrxiv.org/engage/chemrxiv/article-details/658065cb9138d23161f68ac6
 
 We have tested FUSE v.2 primarily on Linux Desktops and clusters.
 
-We recommend setting up FUSE v.2 using Anaconda, as this allows you to easily create the virtual environment needed to setup the ML model used for structure generation.
+We recommend setting up FUSE v.2 using Anaconda with python 3.9 or newer, as this allows you to easily create the virtual environment needed to setup the ML model used for structure generation.
 
 ********************************************************************************
 
