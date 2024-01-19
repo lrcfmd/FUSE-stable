@@ -692,7 +692,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 							kwds=r_kwds,gulp_opts=r_gulp_opts,lib=r_lib,calcs=r_calcs,dist_cutoff=dist_cutoff,qe_opts=qe_opts,
 							gulp_command=gulp_command,gulp_timeout=gulp_timeout,
 							n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,
-							opt_device=opt_device,mode=rank_gn_structures,mode=mode)
+							opt_device=opt_device,mode=rank_gn_structures)
 							
 						except:
 							converged = False
