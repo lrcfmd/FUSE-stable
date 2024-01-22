@@ -932,6 +932,14 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 							reject=True
 							break
 					
+					try:
+						write("temp.cif",temp)
+						temp_structure=extract_module(['temp.cif'],bondtable)
+						temp_structure['source']='None'
+					except(TypeError):
+						reject=True
+					
+					
 					if reject == True:
 						os.remove(i)
 					
@@ -987,7 +995,10 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 					#now get the structure in the correct format
 					write("temp.cif",atoms)
 					structure=extract_module(["temp.cif"],bondtable)
-					structure['source']=pre_built_structures[list(pre_built_structures.keys())[pre_built_used]]['file']
+					try:
+						structure['source']=pre_built_structures[list(pre_built_structures.keys())[pre_built_used]]['file']
+					except:
+						structure['source']="None"
 				
 				pre_built_used +=1
 			
@@ -1356,8 +1367,8 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 						#print(current_structure)
 						start_atoms=len(current_structure['atoms'])
 						start_fus=start_atoms/sum(list(composition.values()))
-						print("start atoms: ",start_atoms)
-						print("start fus: ",start_fus)
+						#print("start atoms: ",start_atoms)
+						#print("start fus: ",start_fus)
 						
 						#next_generation[str(structure_number)],move,pre_built_structures=make_basin_move(
 						trial,move,pre_built_structures=make_basin_move(
@@ -1376,8 +1387,8 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 							imax_atoms,use_spglib,initial_population
 							)
 						
-						print("end atoms", len(trial['atoms']) )
-						print("end fus",len(trial['atoms'])/sum(list(composition.values())))
+						#print("end atoms", len(trial['atoms']) )
+						#print("end fus",len(trial['atoms'])/sum(list(composition.values())))
 						t_atoms=trial['atoms'].copy()
 						trial_fus=len(t_atoms)/sum(list(composition.values()))
 						

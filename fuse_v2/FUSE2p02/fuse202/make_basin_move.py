@@ -60,7 +60,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 	#***************************
 	
 	while complete == False:
-		#print(move)
+		print("move: ",move)
 		##########################################################################
 		if move == 1: #swap the position of two atoms
 			atoms=current_structure['atoms'].copy()
@@ -213,7 +213,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			#flag to say we're ready to change the atoms objecct
 			ready = False
 			while ready == False:
-				to_swap=choice(list(range(3,len(atoms)-1)))
+				to_swap=choice(list(range(3,len(atoms))))
 				
 				pool=list(range(len(atoms)))
 				chosen=[[choice(pool)]]
@@ -389,12 +389,14 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				move = choice(moves_to_choose)
 				continue			
 			
+			#print(len(atoms))
 			# then if we have enough atoms / species, get swapping!
 			
 			#flag to say we're ready to change the atoms objecct
 			ready = False
 			while ready == False:
-				to_swap=choice(list(range(3,len(atoms)-1)))
+				
+				to_swap=choice(list(range(3,len(atoms))))
 				
 				pool=list(range(len(atoms)))
 				chosen=[[choice(pool)]]
@@ -413,7 +415,8 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				
 				if len(unique_syms) > 1:
 					ready = True
-
+			
+			#print("hello1") 
 
 			# Going through the current structure & working out where the viable vacancy sites are
 
@@ -450,7 +453,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			#print("viable vacancies: ",viable)
 			#print("atoms chosen to swap: ",chosen)
-			
+			#print("hello2")
 			#for each site to swap, go through and lable whether or not we're going to shuffle it, or try and move it to a vacancy
 			# need to make sure that the number of sites > 2 or 0 and not the same element
 			ready = False
@@ -477,14 +480,20 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					ready = True
 			
 			
+			#print("hello3")
+			
 			#Go through and move atoms to vacancies:
 			# note, on a one by one basis, as they get moved will have to update / check that each site is viable
+			fail = False
 			for i in vacs:
 				done=False
 				trials=0 # keep track of how many attempts we've made to move an atom, if we get stuck, switch to moving to a site.
 				all_vacs=viable.copy() # take a copy of the vacancy site
 				while done == False:
-					
+					if len(all_vacs)==0:
+						fail=True
+						break
+						
 					vac=choice(all_vacs)
 					temp_atoms=atoms.copy()
 					temp_atoms[i[0]].position=vac
@@ -502,8 +511,17 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					if trials >= len(viable): # seems reasonable to attmpt each of the listed vacencies before giving up!
 						sites.append(i)
 						done=True
+						
+				if fail == True:
+					break
+					
+			if fail == True:
+				move= choice(moves_to_choose)
+				continue			
+					
 				#first choose a vacency
-			
+			#print("hello1")
+
 			
 			#Go through and move the sites around:
 			#build a new list with the symbols shuffled
@@ -706,7 +724,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				symbols.append(i[1])
 			
 			o_symbols=symbols.copy()
-			
+			#print("start symbols: ",o_symbols)
 			while o_symbols == symbols:
 				shuffle(symbols)
 			
@@ -806,10 +824,16 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 
 		##########################################################################
 		if move == 7: # 7. swap the positions of two sub-modules, version taking into account the difference in where the atom closest to the origin is
-			
 			start_point=current_structure.copy()
+			#write("temp.cif",start_point['atoms'])
+			
 			#get a copy of the input modules
 			start_modules=start_point['modules'].copy()
+			
+			if len(start_modules) == 1:
+				move=choice(moves_to_choose)
+				continue
+			
 			#chose the two sub modules that we want to swap
 			c1=choice(list(range(len(start_modules))))
 			c2=c1
@@ -1668,7 +1692,9 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 		#	13. random new structure with upto the same or fewer fus as we have currently		
 		if move == 13:
 			start_point=current_structure.copy()
-			
+			if len(start_point['atoms']) < 4: 
+				move == 14
+				continue
 			#first need the number of formula units in the current structure
 			fus=int(len(start_point['atoms'])/atoms_per_fu)
 			ap=start_point['ap']
@@ -1724,7 +1750,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			if correct == True:
 				comp_atoms=atoms.copy()
 				complete=True
-
+			
 		##########################################################################
 		
 		##########################################################################
