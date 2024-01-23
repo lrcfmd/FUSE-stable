@@ -1693,7 +1693,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 		if move == 13:
 			start_point=current_structure.copy()
 			if len(start_point['atoms']) < 4: 
-				move == 14
+				move = 14
 				continue
 			#first need the number of formula units in the current structure
 			fus=int(len(start_point['atoms'])/atoms_per_fu)
