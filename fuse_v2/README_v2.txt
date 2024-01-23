@@ -1,4 +1,4 @@
-Last Updated: 17th December 2023
+Last Updated: 22nd January 2024
 
 This is the current stable version of FUSE v.2, and is provided "as is" under the GNU public licence:
 
