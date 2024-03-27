@@ -1704,35 +1704,35 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			max_atoms=int(len(start_point['atoms']))
 			imax_atoms=int(len(start_point['atoms']))
 			#imax_atoms=max_atoms
-			trial = 0
-			while trial <= 50:
-				new_structure = get_new_structure(
-				composition=composition,
-				max_atoms=max_atoms,
-				imax_atoms=max_atoms,
-				max_ax=max_ax,
-				density_cutoff = density_cutoff,
-				check_bonds= check_bonds,
-				btol= btol,
-				check_distances= check_distances,
-				system_type= system_type,
-				dist_cutoff = dist_cutoff,
-				vac_ratio = vac_ratio,
-				atoms_per_fu= atoms_per_fu,
-				imax_fus= fus,
-				max_fus= fus,
-				cubic_solutions= cubic_solutions,
-				tetragonal_solutions= tetragonal_solutions,
-				hexagonal_solutions= hexagonal_solutions,
-				orthorhombic_solutions= orthorhombic_solutions,
-				monoclinic_solutions= monoclinic_solutions,
-				bondtable=bondtable,
-				ideal_density=ideal_density,
-				fu=fu,
-				ap=ap
-				)				
+			
+			new_structure = get_new_structure(
+			composition=composition,
+			max_atoms=max_atoms,
+			imax_atoms=max_atoms,
+			max_ax=max_ax,
+			density_cutoff = density_cutoff,
+			check_bonds= check_bonds,
+			btol= btol,
+			check_distances= check_distances,
+			system_type= system_type,
+			dist_cutoff = dist_cutoff,
+			vac_ratio = vac_ratio,
+			atoms_per_fu= atoms_per_fu,
+			imax_fus= fus,
+			max_fus= fus,
+			cubic_solutions= cubic_solutions,
+			tetragonal_solutions= tetragonal_solutions,
+			hexagonal_solutions= hexagonal_solutions,
+			orthorhombic_solutions= orthorhombic_solutions,
+			monoclinic_solutions= monoclinic_solutions,
+			bondtable=bondtable,
+			ideal_density=ideal_density,
+			fu=fu,
+			ap=ap
+			)				
 						
-				atoms=new_structure['atoms']
+			atoms=new_structure['atoms']
+			
 			
 			# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
 			trial_fus=len(atoms)/sum(list(composition.values()))
@@ -1750,18 +1750,6 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			if correct == True:
 				comp_atoms=atoms.copy()
 				complete=True
-				
-			if accept ==0:
-				if trial > 50:
-					#trim moves to remove 12 then choose a different move:
-					t_moves=[]
-					for i in moves_to_choose:
-						if i != 12:
-							t_moves.append(i)
-					
-					move = choice(t_moves)
-					trial = 0
-					continue
 			
 		##########################################################################
 		
