@@ -1733,7 +1733,8 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				)				
 						
 				atoms=new_structure['atoms']
-			
+				trial+=1
+				
 			# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
 			trial_fus=len(atoms)/sum(list(composition.values()))
 			counts=[]
