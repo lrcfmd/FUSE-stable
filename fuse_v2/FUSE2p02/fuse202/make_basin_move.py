@@ -1735,24 +1735,19 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				atoms=new_structure['atoms']
 				trial+=1
 				
-			# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
-			trial_fus=len(atoms)/sum(list(composition.values()))
-			counts=[]
-			correct=False
-			if float(trial_fus).is_integer():
-				#now need to check each species
-				symbols=atoms.get_chemical_symbols()
-				for x in list(composition.keys()):
-					num1=symbols.count(x)
-					counts.append(num1/composition[x])
-				if all(x == trial_fus for x in counts):
-					correct = True
-
-			if correct == True:
-				comp_atoms=atoms.copy()
-				complete=True
-				
-			if accept ==0:
+				# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
+				trial_fus=len(atoms)/sum(list(composition.values()))
+				counts=[]
+				correct=False
+				if float(trial_fus).is_integer():
+					#now need to check each species
+					symbols=atoms.get_chemical_symbols()
+					for x in list(composition.keys()):
+						num1=symbols.count(x)
+						counts.append(num1/composition[x])
+					if all(x == trial_fus for x in counts):
+						correct = True
+					
 				if trial > 50:
 					#trim moves to remove 12 then choose a different move:
 					t_moves=[]
@@ -1762,7 +1757,12 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					
 					move = choice(t_moves)
 					trial = 0
-					continue
+					break
+			
+				if correct == True:
+					comp_atoms=atoms.copy()
+					complete=True
+					break
 			
 		##########################################################################
 		
