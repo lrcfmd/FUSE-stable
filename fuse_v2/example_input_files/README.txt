@@ -19,6 +19,14 @@ energy taken from VASP.
 optimised using SPPs and 2) the SPP optimised structure is then re-optimised using VASP, with the final
 energy taken from VASP.
 
+5. "fgen-chgnet": As experiment 1, but local optimisation is performed in two stages: 1) structures are locally optimised using
+ChgNET, and 2) the structure is re-optimised using VASP, with the final energy taken from VASP.
+
+6. "mlgen-chgnet": Similar to experiment 2, but local optimisation is performed in two stages: 1) structures are locally optimised using
+ChgNET, and 2) the structure is re-optimised using VASP, with the final energy taken from VASP. The inital ranking of structures
+generated from the ML model computed using single point energy calculations using ChgNET.
+
+
 Once you have chosen the calculation you wish to perform, copy the appropriate example input file & edit the required input parameters.
 
 All of the example inputs have been configured for starting a fresh calculation for Ca3Ti2O7.
