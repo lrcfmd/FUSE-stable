@@ -3,9 +3,13 @@ Last Updated: 22nd January 2024
 This is the current stable version of FUSE v.2, and is provided "as is" under the GNU public licence:
 
 
-Version 2.02 and later are detailed in the following pre-print:
+Version 2.02 and later are detailed in the following paper:
 
-https://chemrxiv.org/engage/chemrxiv/article-details/658065cb9138d23161f68ac6
+Faraday Discussions, 2024, DOI: 10.1039/D4FD00094C
+
+Available as an open access article here:
+
+https://pubs.rsc.org/en/content/articlelanding/2024/fd/d4fd00094c#!divAbstract
 
 We have tested FUSE v.2 primarily on Linux Desktops and clusters.
 
