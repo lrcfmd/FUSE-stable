@@ -1,0 +1,46 @@
+data_image0
+_chemical_formula_structural       PbO3PbO6AsPbAsOPbClPbO2As
+_chemical_formula_sum              "Pb5 O12 As3 Cl1"
+_cell_length_a       6.51791
+_cell_length_b       5.85619
+_cell_length_c       12.9933
+_cell_angle_alpha    82.7977
+_cell_angle_beta     78.7124
+_cell_angle_gamma    74.879
+
+_space_group_name_H-M_alt    "P 1"
+_space_group_IT_number       1
+
+loop_
+  _space_group_symop_operation_xyz
+  'x, y, z'
+
+loop_
+  _atom_site_type_symbol
+  _atom_site_label
+  _atom_site_symmetry_multiplicity
+  _atom_site_fract_x
+  _atom_site_fract_y
+  _atom_site_fract_z
+  _atom_site_occupancy
+  Pb  Pb1       1.0  0.01091  0.80921  0.93439  1.0000
+  O   O1        1.0  0.59576  0.64709  0.28391  1.0000
+  O   O2        1.0  0.53365  0.53347  0.06688  1.0000
+  O   O3        1.0  0.97038  0.28315  0.40042  1.0000
+  Pb  Pb2       1.0  0.92681  0.57422  0.26916  1.0000
+  O   O4        1.0  0.27635  0.47136  0.26273  1.0000
+  O   O5        1.0  0.92984  0.96161  0.57302  1.0000
+  O   O6        1.0  0.98097  0.80960  0.38166  1.0000
+  O   O7        1.0  0.76216  0.42455  0.65558  1.0000
+  O   O8        1.0  0.57558  0.12327  0.46024  1.0000
+  O   O9        1.0  0.64215  0.01500  0.76506  1.0000
+  As  As1       1.0  0.84817  0.05686  0.44800  1.0000
+  Pb  Pb3       1.0  0.36242  0.51631  0.42181  1.0000
+  As  As2       1.0  0.84589  0.13156  0.68965  1.0000
+  O   O10       1.0  0.34914  0.64822  0.85947  1.0000
+  Pb  Pb4       1.0  0.45978  0.78831  0.69615  1.0000
+  Cl  Cl1       1.0  0.07457  0.25296  0.98592  1.0000
+  Pb  Pb5       1.0  0.49719  0.31044  0.94418  1.0000
+  O   O11       1.0  0.07985  0.72524  0.11868  1.0000
+  O   O12       1.0  0.06940  0.03957  0.74829  1.0000
+  As  As3       1.0  0.35298  0.70779  0.15850  1.0000
