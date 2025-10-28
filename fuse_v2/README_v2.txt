@@ -1,4 +1,4 @@
-Last Updated: 22nd January 2024
+Last Updated: 29th January 2025
 
 This is the current stable version of FUSE v.2, and is provided "as is" under the GNU public licence:
 
@@ -19,7 +19,7 @@ We recommend setting up FUSE v.2 using Anaconda with python 3.9 or newer, as thi
 
 FUSE v.2 is dependant on the following packages:
 
-The atomic simulation environment (ase)
+The atomic simulation environment (ase) version 23 or later
 Pandas
 spglib
 func_timeout
@@ -40,21 +40,15 @@ This can be installed using pip:
 
 python -m pip install chgnet
 
-If you wish to use CHGNet in your calculations, you will need to download the master version of ase from here:
-
-https://gitlab.com/ase/ase/-/tree/master/ase?ref_type=heads
-
-You can install this version by downloading / unpacking the zip archive & installing with pip in the root ase directory:
-
-python -m pip install . 
-
-If you have previously installed ase on your system you will need to append the above with "--force-reinstall"
-
-We are currently testing how to best use CHGNet within FUSE, and will publish example input scripts for this once we have completed testing.
-
 you can then install FUSE by typing:
 
 python -m pip install in the root python directory.
+
+NOTE: I have found that our ChgNET calculator is incompatable with some versions of numpy. This will manefest as an numpy error 
+message after a ChgNET calculation finishs. I have fixed this previously by installing numpy==1.26.4, if needs be this can be done
+with:
+
+python -m pip install numpy==1.26.4
 
 **********************************************************************************
 
