@@ -3,9 +3,9 @@ from ase.visualize import *
 from ase.io import *
 from random import choice
 from random import shuffle
-from fuse202.extract_modules import *
-from fuse202.assemble_structure_2 import *
-from fuse202.make_new_structure import *
+from fuse205.extract_modules import *
+from fuse205.assemble_structure_2 import *
+from fuse205.make_new_structure import *
 import os
 import sys
 import math
@@ -13,11 +13,13 @@ import random
 
 def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ideal_density,density_cutoff,check_bonds,btol,system_type,fu,composition,check_distances,dist_cutoff,
 	cubic_solutions,tetragonal_solutions,hexagonal_solutions,orthorhombic_solutions,monoclinic_solutions,max_atoms,max_ax,
-	vac_ratio,using_prebuilt,pre_built_structures,max_fus,atoms_per_fu,
-	imax_atoms,use_spglib,initial_population):
+	vac_ratio,using_prebuilt,pre_built_structures,max_fus,atoms_per_fu,ap,
+	imax_atoms,use_spglib,
+	#initial_population,f
+	search=''):
 	#set this to keep attempting moves until we make a valid move
 	complete = False
-	
+
 	#setup the new structure object to return to the main code:
 	#set the empty structure dictionary that we're going to populate
 	structure={
@@ -31,13 +33,12 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 	'energy':0.0,
 	'converged':False
 	}
-	
-	
+
 	trial=0
-	
+
 	#for testing... just have a quick look at the current structure
 	#view(current_structure['atoms'])
-	#write("start.cif",current_structure['atoms'])
+	#write("start.cif",current_structure['atoms'])move
 	
 	# Choose the move that we're going to attempt. I've put it outside of the 
 	# while loop so that we should keep attempting the same move until either it works
@@ -50,10 +51,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 	for i in list(moves.keys()):
 		for j in range(moves[i]):
 			moves_to_choose.append(i)
-			
 	move=choice(moves_to_choose)
-	
-	
 	
 	#*** remember to remove this
 	#move = 10
@@ -61,9 +59,12 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 	
 	while complete == False:
 		print("move: ",move)
+		#print(trial)
 		##########################################################################
 		if move == 1: #swap the position of two atoms
+
 			atoms=current_structure['atoms'].copy()
+			start_point = current_structure.copy()
 			#check that we have more than one element present:
 			syms=[]
 			for i in atoms:
@@ -72,11 +73,14 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			# if we're dealing with an element, redraw a move and continue
 			if len(syms) == 1:
-				move = move=choice(moves_to_choose)
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
+				move=choice(moves_to_choose)
 				continue
-			
+
 			if len(syms) > 1:
-			
+
 				# First choose two different atoms in the structure & swap their symbol
 				
 				a1=[choice(list(range(len(atoms))))]
@@ -105,11 +109,17 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 						counts.append(num1/composition[x])
 					if all(x == trial_fus for x in counts):
 						correct = True
-				
+
 				if correct == True:
 					comp_atoms=atoms.copy()
 					complete=True
-		
+				else:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
+					move = choice(moves_to_choose)
+					continue
+
 		##########################################################################
 
 		
@@ -120,8 +130,8 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			atoms=current_structure['atoms'].copy()
 			# step one, try and locate vacancies
 			# work out what fraction of the cell the grid spacing is in each direction:
-			
-			
+
+
 			cell=current_structure['atoms'].cell.cellpar()
 			steps=[grid_spacing/cell[0],grid_spacing/cell[1],grid_spacing/cell[2]]
 			# initialize our grid
@@ -141,7 +151,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			full_grid=Atoms("",cell=current_structure['atoms'].cell,pbc=True)
 			
 			viable=[]
-			
+			#print("hello!")
 			for i in grid:
 				at=Atom("X",position=i)
 				full_grid+=at
@@ -152,7 +162,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				distances=temp_atoms.get_distances(-1,list(range(len(temp_atoms)-1)),mic=True)
 				if min(distances) > exclusion:
 					viable.append(i)
-						
+			#print("hello 2!")
 			#now, if there are any viable points, choose a point and an atom and move it
 			
 			if len(viable) > 0:
@@ -172,14 +182,24 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 						counts.append(num1/composition[x])
 					if all(x == trial_fus for x in counts):
 						correct = True
-						
+
 				if correct == True:
 					comp_atoms=atoms.copy()
 					complete=True
-				
+				else:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
+					move = choice(moves_to_choose)
+					continue
+
+
 			#if we have no viable points, redraw the move type and continue:
 			if len(viable) == 0:
-				move = move=choice(moves_to_choose)
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
+				move=choice(moves_to_choose)
 				continue
 			
 			#view(temp_atoms)
@@ -190,7 +210,6 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 		if move == 3: # Swap the positions of more than two atoms (but less than all)
 			atoms = current_structure['atoms'].copy()
-			
 			#check to see that there are enough atoms & species to swap in the structure
 			
 			syms=[]
@@ -200,11 +219,17 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			# if we're dealing with an element, redraw a move and continue
 			if len(syms) == 1:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				move = choice(moves_to_choose)
 				continue			
 			
 			# we obviously need more than 3 atoms in the structure to make this move
 			if len(atoms) <= 3:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				move = choice(moves_to_choose)
 				continue			
 			
@@ -266,17 +291,22 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					counts.append(num1/composition[x])
 				if all(x == trial_fus for x in counts):
 					correct = True
-			
+
 			if correct == True:
 				comp_atoms=atoms.copy()
 				complete=True
+			else:
+				if search == 2:
+					trials = False
+					return trials, move, pre_built_structures
+				move = choice(moves_to_choose)
+				continue
 		##########################################################################
 				
 		##########################################################################
 			
 		if move == 5: # Swap the positions of all the atoms in the cell
 			atoms = current_structure['atoms'].copy()
-			
 			#check to see that there are enough atoms & species to swap in the structure
 			
 			syms=[]
@@ -286,11 +316,17 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			# if we're dealing with an element, redraw a move and continue
 			if len(syms) == 1:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				move = choice(moves_to_choose)
 				continue			
 			
 			# we obviously need more than 3 atoms in the structure to make this move, if == 3, need to swap all
 			if len(atoms) <= 3:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				move = choice(moves_to_choose)
 				continue			
 			
@@ -357,11 +393,16 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					counts.append(num1/composition[x])
 				if all(x == trial_fus for x in counts):
 					correct = True
-			
+
 			if correct == True:
 				comp_atoms=atoms.copy()
 				complete=True
-				
+			else:
+				if search == 2:
+					trials = False
+					return trials, move, pre_built_structures
+				move = choice(moves_to_choose)
+				continue
 		##########################################################################
 				
 		##########################################################################
@@ -371,7 +412,6 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			# then need to locate the vacancies within a structure & then decide how many
 			# vacancy sites it wants to use when swapping atoms.
 			atoms = current_structure['atoms'].copy()
-			
 			#check to see that there are enough atoms & species to swap in the structure
 			
 			syms=[]
@@ -381,11 +421,17 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			# if we're dealing with an element, redraw a move and continue
 			if len(syms) == 1:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				move = choice(moves_to_choose)
 				continue			
 			
 			# we obviously need more than 3 atoms in the structure to make this move, if there are only three, it would need to be the swap all
-			if len(atoms) <= 3:
+			if len(atoms) <= 4:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				move = choice(moves_to_choose)
 				continue			
 			
@@ -394,8 +440,11 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			#flag to say we're ready to change the atoms objecct
 			ready = False
+			a=0
 			while ready == False:
-				
+				if a == 100:
+					break
+					
 				to_swap=choice(list(range(3,len(atoms))))
 				
 				pool=list(range(len(atoms)))
@@ -415,8 +464,10 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				
 				if len(unique_syms) > 1:
 					ready = True
-			
-			#print("hello1") 
+					
+				a+=1
+				
+			print("hello1") 
 
 			# Going through the current structure & working out where the viable vacancy sites are
 
@@ -453,12 +504,15 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			#print("viable vacancies: ",viable)
 			#print("atoms chosen to swap: ",chosen)
-			#print("hello2")
+			print("hello2")
 			#for each site to swap, go through and lable whether or not we're going to shuffle it, or try and move it to a vacancy
 			# need to make sure that the number of sites > 2 or 0 and not the same element
 			ready = False
-			
+			a=0
 			while ready == False:
+				if a == 100:
+					break
+					
 				nsite=0
 				nvac=0
 				sites=[]
@@ -478,18 +532,24 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					ready = True
 				if nsite >= 2:
 					ready = True
+				a+=1
 			
-			
-			#print("hello3")
+			print("hello3")
 			
 			#Go through and move atoms to vacancies:
 			# note, on a one by one basis, as they get moved will have to update / check that each site is viable
 			fail = False
 			for i in vacs:
 				done=False
-				trials=0 # keep track of how many attempts we've made to move an atom, if we get stuck, switch to moving to a site.
+				ts=0 # keep track of how many attempts we've made to move an atom, if we get stuck, switch to moving to a site.
 				all_vacs=viable.copy() # take a copy of the vacancy site
+				fail=False
+				
 				while done == False:
+					
+					if ts == 100:
+						break
+						
 					if len(all_vacs)==0:
 						fail=True
 						break
@@ -506,22 +566,22 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					else:
 						#once we've tried and failed to use a vacancy, remove it from the pool
 						del all_vacs[all_vacs.index(vac)]
-						trials+=1
+					ts+=1
 						
-					if trials >= len(viable): # seems reasonable to attmpt each of the listed vacencies before giving up!
+					if ts >= len(viable): # seems reasonable to attmpt each of the listed vacencies before giving up!
 						sites.append(i)
 						done=True
 						
 				if fail == True:
 					break
-					
+			print("hello4")
+			
 			if fail == True:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				move= choice(moves_to_choose)
-				continue			
-					
-				#first choose a vacency
-			#print("hello1")
-
+				continue
 			
 			#Go through and move the sites around:
 			#build a new list with the symbols shuffled
@@ -534,10 +594,20 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				symbols.append(i[1])
 			
 			o_symbols=symbols.copy()
-			
-			while o_symbols == symbols:
-				shuffle(symbols)
-			
+			if len(set(symbols)) > 1:
+				ts=0
+				while o_symbols == symbols:
+					if ts > 100:
+						if search == 2:
+							trials=False
+							return trials, move, pre_built_structures
+						else:
+							move= choice(moves_to_choose)
+							continue
+										
+					shuffle(symbols)
+					ts+=1
+				
 			for i in range(len(indicies)):
 				c=[indicies[i],symbols[i]]
 				shuffled.append(c)
@@ -560,11 +630,16 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					counts.append(num1/composition[x])
 				if all(x == trial_fus for x in counts):
 					correct = True
-			
+
 			if correct == True:
 				comp_atoms=atoms.copy()
 				complete=True
-
+			else:
+				if search == 2:
+					trials = False
+					return trials, move, pre_built_structures
+				move = choice(moves_to_choose)
+				continue
 		##########################################################################
 				
 		##########################################################################
@@ -575,7 +650,6 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			# then need to locate the vacancies within a structure & then decide how many
 			# vacancy sites it wants to use when swapping atoms.
 			atoms = current_structure['atoms'].copy()
-			
 			#check to see that there are enough atoms & species to swap in the structure
 			
 			syms=[]
@@ -585,11 +659,17 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			# if we're dealing with an element, redraw a move and continue
 			if len(syms) == 1:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				move = choice(moves_to_choose)
 				continue			
 			
 			# we obviously need more than 2 atoms in the structure to make this move
 			if len(atoms) <= 2:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				move = choice(moves_to_choose)
 				continue			
 			
@@ -597,7 +677,11 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			#flag to say we're ready to change the atoms objecct
 			ready = False
+			a=0
 			while ready == False:
+				if a == 100:
+					break
+					
 				to_swap=len(atoms)				
 				pool=list(range(len(atoms)))
 				chosen=[[choice(pool)]]
@@ -616,8 +700,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				
 				if len(unique_syms) > 1:
 					ready = True
-
-
+				a+=1
 			# Going through the current structure & working out where the viable vacancy sites are
 
 			cell=current_structure['atoms'].cell.cellpar()
@@ -657,9 +740,12 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			#for each site to swap, go through and lable whether or not we're going to shuffle it, or try and move it to a vacancy
 			# need to make sure that the number of sites > 2 or 0 and not the same element
 			ready = False
-				
-				
+
+			a=0
 			while ready == False:
+				if a == 100:
+					break
+					
 				nsite=0
 				nvac=0
 				sites=[]
@@ -679,16 +765,19 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					ready = True
 				if nsite >= 2:
 					ready = True
-			
+				a+=1
 			
 			#Go through and move atoms to vacancies:
 			# note, on a one by one basis, as they get moved will have to update / check that each site is viable
 			
 			for i in vacs:
 				done=False
-				trials=0 # keep track of how many attempts we've made to move an atom, if we get stuck, switch to moving to a site.
+				ts=0 # keep track of how many attempts we've made to move an atom, if we get stuck, switch to moving to a site.
 				all_vacs=viable.copy() # take a copy of the vacancy site
 				while done == False:
+					if ts == 100:
+						break
+						
 					try:		
 						vac=choice(all_vacs)
 					except:
@@ -705,9 +794,9 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					else:
 						#once we've tried and failed to use a vacancy, remove it from the pool
 						del all_vacs[all_vacs.index(vac)]
-						trials+=1
+					ts+=1
 						
-					if trials >= len(viable): # seems reasonable to attmpt each of the listed vacencies before giving up!
+					if ts >= len(viable): # seems reasonable to attmpt each of the listed vacencies before giving up!
 						sites.append(i)
 						done=True
 				#first choose a vacency
@@ -724,9 +813,20 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				symbols.append(i[1])
 			
 			o_symbols=symbols.copy()
-			#print("start symbols: ",o_symbols)
-			while o_symbols == symbols:
-				shuffle(symbols)
+			if len(set(symbols)) > 1:
+				#print("start symbols: ",o_symbols)
+				ts=0
+				while o_symbols == symbols:
+					if ts > 100:
+						if search == 2:
+							trials=False
+							return trials, move, pre_built_structures
+						else:
+							move= choice(moves_to_choose)
+							continue
+										
+					shuffle(symbols)
+					ts+=1
 			
 			for i in range(len(indicies)):
 				c=[indicies[i],symbols[i]]
@@ -753,7 +853,12 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			if correct == True:
 				comp_atoms=atoms.copy()
 				complete=True
-
+			else:
+				if search == 2:
+					trials = False
+					return trials, move, pre_built_structures
+				move = choice(moves_to_choose)
+				continue
 		##########################################################################
 				
 		###########################################################################
@@ -831,7 +936,14 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			start_modules=start_point['modules'].copy()
 			
 			if len(start_modules) == 1:
-				move=choice(moves_to_choose)
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
+				t_moves=[]
+				for i in moves_to_choose:
+					if i != 7:
+						t_moves.append(i)
+				move=choice(t_moves)
 				continue
 			
 			#chose the two sub modules that we want to swap
@@ -877,7 +989,6 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				mod1s=start_modules[c1].copy()
 				mod1s.set_scaled_positions(s_positions1)
 				#view([mod1,mod1s])
-				
 							
 				#now same again for sub module 2
 				diff2=mod2[m2].scaled_position - mod1[m1].scaled_position
@@ -906,8 +1017,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			#print(swapped_modules[c1])
 			#print(swapped_modules[c1].get_positions())
 			#print(swapped_modules[c1].cell.cellpar())
-			
-			
+
 			#now need to go and rebuild the new atoms object
 			
 			t={'modules':swapped_modules,
@@ -920,10 +1030,15 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			ap=t['ap']
 			target_number_atoms=len(start_point['atoms'])
 			#check_bonds=False
-			
-			atoms=assemble_structure2(t)
-			accept=error_check_structure(atoms,ideal_density,density_cutoff,check_bonds,btol,system_type,fu,composition,bondtable,ap,check_distances,dist_cutoff,target_number_atoms=target_number_atoms)
-			trial+=1
+			try:
+				atoms=assemble_structure2(t)
+				accept=error_check_structure(atoms,ideal_density,density_cutoff,check_bonds,btol,system_type,fu,composition,bondtable,ap,check_distances,dist_cutoff,target_number_atoms=target_number_atoms)
+				trial+=1
+			except:
+				accept=0
+				trial+=1
+				
+				
 			if accept == 1:
 				# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
 				trial_fus=len(atoms)/sum(list(composition.values()))
@@ -941,13 +1056,31 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				if correct == True:
 					comp_atoms=atoms.copy()
 					complete=True
-				
-			#give up with this move if we can't do it after 5000 attempts
+
+				if correct == False and trial > 10:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
+					# trim moves to remove 7 then choose a different move:
+					t_moves = []
+					for i in moves_to_choose:
+						if i != 7:
+							t_moves.append(i)
+
+					move = choice(t_moves)
+					trial = 0
+					continue
+
+			#give up with this move if we can't do it after 500 attempts
 			#write("before.cif",start_point['atoms'])
 			#write("after.cif",atoms)
-			#sys.exit()	
+			#sys.exit()
+
 			if accept ==0:
-				if trial > 100:
+				if trial > 10:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
 					#trim moves to remove 7 then choose a different move:
 					t_moves=[]
 					for i in moves_to_choose:
@@ -957,20 +1090,20 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					move = choice(t_moves)
 					trial = 0
 					continue
-	
-	
 				
 		##########################################################################
 
-
 		###########################################################################
-		if move == 8: 	#8. find two full slices/modules in the structure and switch their positions
+		if move == 1000: 	#8. find two full slices/modules in the structure and switch their positions
 			#### ORIGINAL VERSION ####
 			start_point = current_structure.copy()
 			shape=start_point['shape in submods'].copy()
 			layers=shape[2]
 			# If we have less than three layeers the move it pointless, move on!
 			if layers < 3:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				t_moves=[]
 				for i in moves_to_choose:
 					if i != 8:
@@ -1045,7 +1178,6 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			except:
 				accept=0
 			
-			
 			trial+=1
 			
 			if accept == 1: # before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
@@ -1064,11 +1196,27 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				if correct == True:
 					comp_atoms=atoms.copy()
 					complete=True
-						
-			#give up with this move if we can't do it after 5000 attempts
+
+				if correct == False and trial > 10:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
+					# trim moves to remove 8 then choose a different move:
+					t_moves = []
+					for i in moves_to_choose:
+						if i != 8:
+							t_moves.append(i)
+
+					move = choice(t_moves)
+					trial = 0
+					continue
+			#give up with this move if we can't do it after 500 attempts
 				
 			if accept ==0:
-				if trial > 500:
+				if trial > 10:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
 					#trim moves to remove 8 then choose a different move:
 					t_moves=[]
 					for i in moves_to_choose:
@@ -1082,12 +1230,31 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 		###########################################################################
 
 		##########################################################################
-		if move == 100: 	#8. find two full slices/modules in the structure and switch their positions version taking into account the difference in where the atom closest to the origin is
+		if move == 8: 	#8. find two full slices/modules in the structure and switch their positions version taking into account the difference in where the atom closest to the origin is
+			
+			if trial > 10:
+				if search == 2:
+					trials = False
+					return trials, move, pre_built_structures
+				#trim moves to remove 8 then choose a different move:
+				t_moves=[]
+				for i in moves_to_choose:
+					if i != 8:
+						t_moves.append(i)
+				
+				move = choice(t_moves)
+				trial = 0
+				continue
+
+			
 			start_point = current_structure.copy()
 			shape=start_point['shape in submods']
 			layers=shape[2]
 			# If we have less than three layeers the move it pointless, move on!
 			if layers < 3:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				t_moves=[]
 				for i in moves_to_choose:
 					if i != 8:
@@ -1139,8 +1306,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				else:
 					new_keys.append(old_keys[i])
 					continue		
-			
-			
+
 			#print(old_keys)
 			#print(new_keys)
 			
@@ -1154,7 +1320,12 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				'shape in submods':layer_shape,
 				'ap':start_point['ap']}				
 			
-			layer1=assemble_structure2(l1)
+			try:
+				layer1=assemble_structure2(l1)
+			except:
+				accept=0
+				trial+=1
+
 
 			#view(layer1)
 			
@@ -1164,7 +1335,12 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				'shape in submods':layer_shape,
 				'ap':start_point['ap']}				
 			
-			layer2=assemble_structure2(l2)
+			try:
+				layer2=assemble_structure2(l2)
+			except:
+				accept=0
+				trial+=1
+				
 			
 			#view(layer2)
 			need_to_move=False
@@ -1232,17 +1408,19 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			target_number_atoms=len(start_point['atoms'])
 			#check_bonds=False
 			try:
+				
 				atoms=assemble_structure2(t)
 				accept=error_check_structure(atoms,ideal_density,density_cutoff,check_bonds,btol,system_type,fu,composition,bondtable,ap,check_distances,dist_cutoff,target_number_atoms=target_number_atoms)
+				trial+=1
 			except:
 				accept=0
-			
+				trial+=1
 			#write("before.cif",start_point['atoms'])
 			#write("after.cif",atoms)
 			#
 			#sys.exit()
 			
-			trial+=1
+			
 			if accept == 1:
 				# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
 				trial_fus=len(atoms)/sum(list(composition.values()))
@@ -1261,10 +1439,13 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					comp_atoms=atoms.copy()
 					complete=True
 				
-			#give up with this move if we can't do it after 5000 attempts
+			#give up with this move if we can't do it after 500 attempts
 				
 			if accept ==0:
-				if trial > 500:
+				if trial > 10:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
 					#trim moves to remove 8 then choose a different move:
 					t_moves=[]
 					for i in moves_to_choose:
@@ -1320,14 +1501,17 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			try:
 				new_cell=choice(viable)
 			except:
-					t_moves=[]
-					for i in moves_to_choose:
-						if i != 9:
-							t_moves.append(i)
-					
-					move = choice(t_moves)
-					trial = 0
-					continue
+				if search == 2:
+					trials = False
+					return trials, move, pre_built_structures
+				t_moves=[]
+				for i in moves_to_choose:
+					if i != 9:
+						t_moves.append(i)
+
+				move = choice(t_moves)
+				trial = 0
+				continue
 
 			#print(new_cell)
 			
@@ -1342,12 +1526,13 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			try:
 				atoms=assemble_structure2(t)
 				accept=error_check_structure(atoms,ideal_density,density_cutoff,check_bonds,btol,system_type,fu,composition,bondtable,ap,check_distances,dist_cutoff,target_number_atoms=target_number_atoms)
-				
+				trial+=1
 			except:
 				accept = 0
-				continue
+				trial+=1
+				#continue
 		
-			trial+=1
+			
 			if accept == 1:
 				
 				# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
@@ -1367,10 +1552,13 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					comp_atoms=atoms.copy()
 					complete=True
 				
-			#give up with this move if we can't do it after 5000 attempts
+			#give up with this move if we can't do it after 500 attempts
 				
 			if accept ==0:
-				if trial > 500:
+				if trial > 10:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
 					#trim moves to remove 9 then choose a different move:
 					t_moves=[]
 					for i in moves_to_choose:
@@ -1389,6 +1577,9 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			#print("start atoms: ",len(start_point['atoms']) )
 			#check to see if the number of atoms is less than half of the limit
 			if len(start_point['atoms']) > 0.5*max_atoms:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				t_moves=[]
 				for i in moves_to_choose:
 					if i != 11:
@@ -1406,7 +1597,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			#choose, just repeat, extend + translate?, extend + invert?, mirror? # at somepoint want to try and work out rotate!
 			typ=choice(["repeat","translate","invert","mirror"])
 			
-			#typ="mirror"
+			#typ="repeat"
 			
 			#write("before.cif",temp_atoms)
 			
@@ -1516,9 +1707,14 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			ap=start_point['ap']
 			target_number_atoms=len(temp_atoms)
-			accept=error_check_structure(temp_atoms,ideal_density,density_cutoff,check_bonds,btol,system_type,fu,composition,bondtable,ap,check_distances,dist_cutoff,target_number_atoms=target_number_atoms)
-			
-			trial+=1
+			try:
+				accept=error_check_structure(temp_atoms,ideal_density,density_cutoff,check_bonds,btol,system_type,fu,composition,bondtable,ap,check_distances,dist_cutoff,target_number_atoms=target_number_atoms)
+				trial+=1
+				
+			except:
+				accept=0
+				trial+=1
+				
 			if accept == 1:
 				atoms=temp_atoms.copy()
 				
@@ -1534,16 +1730,18 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 						counts.append(num1/composition[x])
 					if all(x == trial_fus for x in counts):
 						correct = True
-					
-					
+
 				if correct == True:	
 					comp_atoms=atoms.copy()
 					complete=True
 				
-			#give up with this move if we can't do it after 5000 attempts
+			#give up with this move if we can't do it after 500 attempts
 				
 			if accept ==0:
-				if trial > 50:
+				if trial > 10:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
 					#trim moves to remove 11 then choose a different move:
 					t_moves=[]
 					for i in moves_to_choose:
@@ -1553,8 +1751,6 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					move = choice(t_moves)
 					trial = 0
 					continue
-			
-			#complete=True
 		##########################################################################
 		
 		##########################################################################
@@ -1564,6 +1760,9 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			#blocks=2
 			#check to see if the number of atoms is less than 1/3 of the limit
 			if len(start_point['atoms']) > float(1/3.)*max_atoms:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				t_moves=[]
 				for i in moves_to_choose:
 					if i != 12:
@@ -1627,29 +1826,33 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				
 			ap=start_point['ap']
 			target_number_atoms=len(temp_atoms)
-			accept=error_check_structure(
-			temp_atoms,
-			ideal_density,
-			density_cutoff,
-			check_bonds,
-			btol,
-			system_type,
-			fu,
-			composition,
-			bondtable,
-			ap,
-			check_distances,
-			dist_cutoff,
-			target_number_atoms=target_number_atoms
-			)
-			
+			try:
+				accept=error_check_structure(
+				temp_atoms,
+				ideal_density,
+				density_cutoff,
+				check_bonds,
+				btol,
+				system_type,
+				fu,
+				composition,
+				bondtable,
+				ap,
+				check_distances,
+				dist_cutoff,
+				target_number_atoms=target_number_atoms
+				)
+				trial+=1
+			except:
+				accept=0
+				trial+=1
 			#write("before.cif",start_point['atoms'])
 			#write("after.cif",temp_atoms)
 			#print("accept: ",accept)
 			
 			#sys.exit()
 			
-			trial+=1
+			
 			if accept == 1:
 				atoms=temp_atoms.copy()
 				
@@ -1670,10 +1873,13 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 					comp_atoms=atoms.copy()
 					complete=True
 				
-			#give up with this move if we can't do it after 5000 attempts
+			#give up with this move if we can't do it after 500 attempts
 				
 			if accept ==0:
-				if trial > 50:
+				if trial > 10:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
 					#trim moves to remove 12 then choose a different move:
 					t_moves=[]
 					for i in moves_to_choose:
@@ -1691,79 +1897,81 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 		##########################################################################
 		#	13. random new structure with upto the same or fewer fus as we have currently		
 		if move == 13:
-			start_point=current_structure.copy()
-			if len(start_point['atoms']) < 4: 
+			start_point = current_structure.copy()
+			if len(start_point['atoms']) < 4:
 				move = 14
 				continue
-			#first need the number of formula units in the current structure
-			fus=int(len(start_point['atoms'])/atoms_per_fu)
-			ap=start_point['ap']
-			
-			#atoms_per_fu=sum(composition.values())
-			#
-			max_atoms=int(len(start_point['atoms']))
-			imax_atoms=int(len(start_point['atoms']))
-			#imax_atoms=max_atoms
-			trial = 0
-			while trial <= 50:
+			#print("hello1")
+			# first need the number of formula units in the current structure
+			fus = int(len(start_point['atoms']) / atoms_per_fu)
+			ap = start_point['ap']
+			max_atoms = int(len(start_point['atoms']))
+			imax_atoms = int(len(start_point['atoms']))
+			# imax_atoms=max_atoms
+			try:
 				new_structure = get_new_structure(
-				composition=composition,
-				max_atoms=max_atoms,
-				imax_atoms=max_atoms,
-				max_ax=max_ax,
-				density_cutoff = density_cutoff,
-				check_bonds= check_bonds,
-				btol= btol,
-				check_distances= check_distances,
-				system_type= system_type,
-				dist_cutoff = dist_cutoff,
-				vac_ratio = vac_ratio,
-				atoms_per_fu= atoms_per_fu,
-				imax_fus= fus,
-				max_fus= fus,
-				cubic_solutions= cubic_solutions,
-				tetragonal_solutions= tetragonal_solutions,
-				hexagonal_solutions= hexagonal_solutions,
-				orthorhombic_solutions= orthorhombic_solutions,
-				monoclinic_solutions= monoclinic_solutions,
-				bondtable=bondtable,
-				ideal_density=ideal_density,
-				fu=fu,
-				ap=ap
-				)				
-						
-				atoms=new_structure['atoms']
-				trial+=1
-				
+					composition=composition,
+					max_atoms=max_atoms,
+					imax_atoms=max_atoms,
+					max_ax=max_ax,
+					density_cutoff=density_cutoff,
+					check_bonds=check_bonds,
+					btol=btol,
+					check_distances=check_distances,
+					system_type=system_type,
+					dist_cutoff=dist_cutoff,
+					vac_ratio=vac_ratio,
+					atoms_per_fu=atoms_per_fu,
+					imax_fus=fus,
+					max_fus=fus,
+					cubic_solutions=cubic_solutions,
+					tetragonal_solutions=tetragonal_solutions,
+					hexagonal_solutions=hexagonal_solutions,
+					orthorhombic_solutions=orthorhombic_solutions,
+					monoclinic_solutions=monoclinic_solutions,
+					bondtable=bondtable,
+					ideal_density=ideal_density,
+					fu=fu,
+					ap=ap
+				)
+				#print("hello2")
+				atoms = new_structure['atoms']
+			except:
+				##print("hello3")
+				atoms=None
+			#print("hello4")
+			correct = False
+			if not atoms == None:
 				# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
-				trial_fus=len(atoms)/sum(list(composition.values()))
-				counts=[]
-				correct=False
+				trial_fus = len(atoms) / sum(list(composition.values()))
+				counts = []
+				
 				if float(trial_fus).is_integer():
-					#now need to check each species
-					symbols=atoms.get_chemical_symbols()
+					# now need to check each species
+					symbols = atoms.get_chemical_symbols()
 					for x in list(composition.keys()):
-						num1=symbols.count(x)
-						counts.append(num1/composition[x])
+						num1 = symbols.count(x)
+						counts.append(num1 / composition[x])
 					if all(x == trial_fus for x in counts):
 						correct = True
-					
-				if trial > 50:
-					#trim moves to remove 12 then choose a different move:
-					t_moves=[]
-					for i in moves_to_choose:
-						if i != 12:
-							t_moves.append(i)
-					
-					move = choice(t_moves)
-					trial = 0
-					break
-			
-				if correct == True:
-					comp_atoms=atoms.copy()
-					complete=True
-					break
-			
+
+			if correct == True:
+				comp_atoms = atoms.copy()
+				complete = True
+			#print("hello5")
+			if correct == False:
+				if search == 2:
+					trials = False
+					return trials, move, pre_built_structures
+				# trim moves to remove 13 then choose a different move:
+				t_moves = []
+				for i in moves_to_choose:
+					if i != 13:
+						t_moves.append(i)
+				move = choice(t_moves)
+				trial = 0
+				continue
+
 		##########################################################################
 		
 		##########################################################################
@@ -1790,6 +1998,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			
 			#if we have prebuilt available, use 50:50 of using one ot the other
 			if pre_built_to_pull == True:
+				
 				new=choice(["random","prebuilt"])
 			
 			#all else fails, choose random
@@ -1797,65 +2006,88 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				new="random"
 							
 			if new == "prebuilt":
-				c=choice(available)
-				temp=pre_built_structures[c]
-				atoms=temp['structure']
-				pre_built_structures[c]['used?']=True
-				comp_atoms=atoms.copy()
-				complete=True
-			
-			if new == "random":
-				fus=int(len(start_point['atoms'])/sum(composition.values()))
-				ap=start_point['ap']
-				
-				atoms_per_fu=sum(composition.values())
-				
-				imax_atoms=max_atoms
-				
-				new_structure = get_new_structure(
-				composition=composition,
-				max_atoms=max_atoms,
-				imax_atoms=max_atoms,
-				max_ax=max_ax,
-				density_cutoff = density_cutoff,
-				check_bonds= check_bonds,
-				btol= btol,
-				check_distances= check_distances,
-				system_type= system_type,
-				dist_cutoff = dist_cutoff,
-				vac_ratio = vac_ratio,
-				atoms_per_fu= atoms_per_fu,
-				imax_fus= max_fus,
-				max_fus= max_fus,
-				cubic_solutions= cubic_solutions,
-				tetragonal_solutions= tetragonal_solutions,
-				hexagonal_solutions= hexagonal_solutions,
-				orthorhombic_solutions= orthorhombic_solutions,
-				monoclinic_solutions= monoclinic_solutions,
-				bondtable=bondtable,
-				ideal_density=ideal_density,
-				fu=fu,
-				ap=ap)				
-							
-				atoms=new_structure['atoms']
-				
-				# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
-				trial_fus=len(atoms)/sum(list(composition.values()))
-				counts=[]
-				correct=False
-				if float(trial_fus).is_integer():
-					#now need to check each species
-					symbols=atoms.get_chemical_symbols()
-					for x in list(composition.keys()):
-						num1=symbols.count(x)
-						counts.append(num1/composition[x])
-					if all(x == trial_fus for x in counts):
-						correct = True
-				
-				
-				if correct == True:
+				try:
+					c=choice(available)
+					temp=pre_built_structures[c]
+					atoms=temp['structure']
+					pre_built_structures[c]['used?']=True
 					comp_atoms=atoms.copy()
 					complete=True
+			
+				except:
+					pre_built_to_pull = False
+					available = None
+					new="random"
+			
+			if new == "random":
+
+				fus = int(len(start_point['atoms']) /sum(composition.values()))
+				ap=start_point['ap']
+				atoms_per_fu=sum(composition.values())
+
+				imax_atoms=max_atoms
+				try:
+					new_structure = get_new_structure(
+					composition=composition,
+					max_atoms=max_atoms,
+					imax_atoms=max_atoms,
+					max_ax=max_ax,
+					density_cutoff = density_cutoff,
+					check_bonds= check_bonds,
+					btol= btol,
+					check_distances= check_distances,
+					system_type= system_type,
+					dist_cutoff = dist_cutoff,
+					vac_ratio = vac_ratio,
+					atoms_per_fu= atoms_per_fu,
+					imax_fus= fus,
+					max_fus= fus,
+					cubic_solutions= cubic_solutions,
+					tetragonal_solutions= tetragonal_solutions,
+					hexagonal_solutions= hexagonal_solutions,
+					orthorhombic_solutions= orthorhombic_solutions,
+					monoclinic_solutions= monoclinic_solutions,
+					bondtable=bondtable,
+					ideal_density=ideal_density,
+					fu=fu,
+					ap=ap)
+					atoms=new_structure['atoms']
+				except:
+					atoms = None
+
+				correct=False
+				if not atoms == None:
+					# before we pass the structure back, check that we have a set of atoms which is consistent with the input composition
+					trial_fus=len(atoms)/sum(list(composition.values()))
+					counts=[]
+					
+					if float(trial_fus).is_integer():
+						#now need to check each species
+						symbols=atoms.get_chemical_symbols()
+						for x in list(composition.keys()):
+							num1=symbols.count(x)
+							counts.append(num1/composition[x])
+						if all(x == trial_fus for x in counts):
+							correct = True
+            	
+					if correct == True:
+						comp_atoms=atoms.copy()
+						complete=True
+
+				else:
+					if search == 2:
+						trials = False
+						return trials, move, pre_built_structures
+					# trim moves to remove 14 then choose a different move:
+					t_moves = []
+					for i in moves_to_choose:
+						if i != 14:
+							t_moves.append(i)
+
+					move = choice(t_moves)
+					trial = 0
+					continue
+
 		##########################################################################
 		
 		##########################################################################
@@ -1878,6 +2110,9 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 						viable.append(i)
 			
 			if len (viable) == 0:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				accept=0
 				t_moves=[]
 				for i in moves_to_choose:
@@ -1959,15 +2194,16 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			        os.remove("test.cif")
 			    except:
 			        pass
-  			
-  			
-  			
+
 			if correct == True:
 				comp_atoms=atoms.copy()
 				complete=True
 			
 			trial +=1
-			if trial > 500:
+			if trial > 10:
+				if search == 2:
+					trials=False
+					return trials, move, pre_built_structures
 				#trim moves to remove 12 then choose a different move:
 				t_moves=[]
 				for i in moves_to_choose:
@@ -1977,8 +2213,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 				move = choice(t_moves)
 				trial = 0
 				continue
-		
-		
+
 		##########################################################################
 			
 			#view(atoms)	
@@ -1986,7 +2221,7 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 			#sys.exit()
 		
 	#for testing, write out the structure with completed move		
-	write("swapped.cif",atoms)
+	#write("swapped.cif",atoms)
 	atoms=comp_atoms.copy()
 	#ok, now we've completed the move we need to fill out the structure object:
 	if use_spglib == True:
@@ -2023,12 +2258,13 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 	#sys.exit()
 	
 	#print("swapped atoms: ",len(atoms))
-
+	
 	write("temp.cif",atoms)
 	structure=extract_module(["temp.cif"],bondtable)
-	structure['optimised?']=False
-	structure['energy']=0.0
-	structure['converged']=False
+	if not structure == None:
+		structure['optimised?']=False
+		structure['energy']=0.0
+		structure['converged']=False
 	os.remove("temp.cif")
 	# just check we've got everything
 	

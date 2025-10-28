@@ -1,19 +1,19 @@
 ################################################################################
 #fuse imports
 ################################################################################
-from fuse202.possible_solutions import *
-from fuse202.generate_random_structure import *
-from fuse202.extract_modules import *
-import fuse202.bond_table
-from fuse202.make_new_structure import *
-from fuse202.run_gulp import *
-from fuse202.run_vasp import *
-from fuse202.run_qe import *
-from fuse202.run_chgnet import *
-from fuse202.run_multiple_calculators import run_calculators
-from fuse202.make_basin_move import *
-from fuse202.plot_results import *
-from fuse202.assemble_spp import *
+from fuse205.possible_solutions import *
+from fuse205.generate_random_structure import *
+from fuse205.extract_modules import *
+import fuse205.bond_table
+from fuse205.make_new_structure import *
+from fuse205.run_gulp import *
+from fuse205.run_vasp import *
+from fuse205.run_qe import *
+from fuse205.run_multiple_calculators import run_calculators
+from fuse205.make_basin_move import *
+from fuse205.plot_results import *
+from fuse205.assemble_spp import *
+from fuse205.structure_generators import *
 
 ################################################################################
 #other imports
@@ -45,6 +45,7 @@ from ase import Atoms
 # needed. Comment this out for debugging.
 
 t1=datetime.datetime.now()
+
 #desctription of each of the BH moves to print out
 #	1. swap two atoms - DONE
 #	2. swap an atom in to a vacent space - DONE
@@ -68,11 +69,8 @@ t1=datetime.datetime.now()
 #	13. random new structure with upto the same number of fus as we have currently - DONE
 #	14. random new structure, allowing the use of any remaining pre-built structures - DONE
 
-# KNOWN ISSUES: when iterations = 0, the code should just read any restart files and / or generate the initial population and exit. at the moment, if the relaxtaions
-# for the inintial population are not complete, it will continue to run through them instead! Also need to get it to flush the output after each structure during
-# the initial population.
-# Another new bug... when getting a structure from VASP, if for some reason vasp doesn't appear to run corrcetly, it's carrying through the energy from SPP instead?!?
-# Another thing to do: keep an internal log of the total walltime used for a simulation!
+# KNOWN ISSUES: when iterations = 0, 
+# new issue, when using generation size of greater than 1, issues with how the genreation is saved. 
 
 move_des={
 1:"Swap two atoms",
@@ -106,11 +104,12 @@ dist_cutoff = 1.0, # shortest permitted interatomic contact defined in angstroms
 system_type="neutral", # the system type? note: only using "neutral" at the moment!
 vac_ratio = 4, # when generating random structures, the maximum ratio of vacent sites : 1 atom
 write_all_structures=True, # write out all of the geometry optimised structures which FUSE generates
+write_cifs=False,
 swap_searches = False, # when set to FUSE, allow it to switch between search routines
 search = 1, # search routine for FUSE to use, 1 = basin hopping, 2 basin hopping with reinforcement learning, 3 = genetic algorithm
 ap_scale='', # scale factor which can be applied to the FUSE calculated lattice parameter for sub modules
 read_exisiting_structures = False, # read in and slice previously generated structures for modules?
-path_to_structures = '', # should be a directory containing the structures you want to read in
+path_to_structures= '', # should be a directory containing the structures you want to read in
 initial_gen = 20, # number of structures which should be in the initial population
 iterations = 0, # number of structures to relax in this run of the code
 ratt_dist=0.05, # perturb structures around a standard deviation when they have been generated in Angstroms
@@ -123,6 +122,12 @@ pull_random=False, # if set to True, when using pre-built structure pull them in
 pull_spp_rank=True, # if True, pull pre-built structures as ranked by spp potentials. BEWARE! you need to first run a script to rank all pre-generated structures & produce one or more csv files containing file names and corresponding energies
 use_spglib=True, # if True, everytime an atoms object is generated, tidy up the structure with spglib before the modules are extracted 
 
+#varibles for structure generation
+generator='',
+generate_structures_only=False, #if set to true, run the gn structure generation then exit, useful to pre-generate structures, then srtart the calculation properly with generate_gn_boss_structures = False
+ranking='mixed', # option for what to use to rank gn-boss output, can be set to either "gulp" or "chgnet"
+r_calcs=['gulp','chgnet'],
+
 #variables used to run ML structure generation:
 #gn boss model for structure generation
 generate_gn_boss_structures=False, # if set to true, when FUSE is firt launched, it will run gn-boss to generate the pool of refe22rennce structures for this calculation.
@@ -131,11 +136,13 @@ gn_search='tpe', # 'rand' random search, 'tpe' baysian opt, 'pso' particle swarm
 gn_max_step=500, # number of generation attempts for gn-boss
 gn_template_path=os.environ['GNBOSS_TEMP'], #path to template files for using gn-boss 
 gn_zn_range=[1,4], # numbers of formula units to scan with GN-BOSS for generating structures
-rank_gn_structures='single', #if None; do not rank structures, this should only be set if pull_random = True above, if 'opti' rank with SPPs AFTER geometry optimising the, if 'sing' rank based on single point calculations with SPPs. 
-clear_previous_gn_structures=False, #if set to True, before starting the calcluation, remove any previous structures from reference structures & gn-boss generated_results.
-generate_structures_only=False, #if set to true, run the gn structure generation then exit, useful to pre-generate structures, then srtart the calculation properly with generate_gn_boss_structures = False
-ranking='mixed', # option for what to use to rank gn-boss output, can be set to either "gulp" or "chgnet"
-r_calcs=['gulp','chgnet'],
+rank_structures='single', #if None; do not rank structures, this should only be set if pull_random = True above, if 'opti' rank with SPPs AFTER geometry optimising the, if 'sing' rank based on single point calculations with SPPs.
+clear_previous_structures=False, #if set to True, before starting the calcluation, remove any previous structures from reference structures & generated_results.
+
+#airss structure generation variables
+generate_airss_structures=False,
+airss_form_units=1,
+airss_num_structures=100,
 
 #gulp options to rank spps:
 r_kwds=['opti conj conp noelectro','opti conj conp noelectro','opti conp noelectro','sing conp noelectro'], # keywords for the gulp input, 
@@ -148,8 +155,6 @@ r_gulp_opts=[
 ],	# options for gulp, must include one line per set of inputs in "kwds"
 r_lib='dummy.lib', # library file for interatomic potentials				
 
-
-
 #variables which need defining for each of the search rountines
 #1. basin hopping
 search_gen_bh=1,
@@ -160,10 +165,21 @@ rmax=1000, # convergence criteria
 grid_spacing=0.75, # grid spacing to use in Angstroms for basin hopping moves when trying to find gaps in a structure
 exclusion=1.5, # when moving atoms around, set minimum distance a potential site needs to be from an exisiting atom in Angstroms
 #2. additional parameters for using RL
+params_db='',
+dir_num = '', #numerical identifier for mysql tables
+reinforce_table = '', # name for the table, set inputs as the same across runs to cross_learn
+reinforce_theta_table = '',
+alpha='',
+reg_params={},
+reinforce_verbosity=False,
+target_energy='',
+clear_previous_db=False, # delete any existing database files in the working directory
+plot_rl_graphs=True, # if true, will plot probability for energy/step graphs for each move, this can take some time so take care setting as True
+rl_interval=100,
 #3. GA
 
 #variables which need defining for the calculators
-ctype='', # calculator type to use: "gulp", "vasp", "qe", "mixed" (qe = Quantum Espresso)
+ctype='', # calculator type to use: "gulp", "vasp", "qe", "repose" , "mixed" (qe = Quantum Espresso)
 #GULP:
 kwds='', # keywords needed for gulp input
 gulp_opts='', # options needed for gulp
@@ -179,17 +195,22 @@ vasp_opts='', # options for each Vasp calculation
 kcut=30, # parameter for number of kpoints, higher number = more kpoints, just set to 1 if using KSPACING flag in VASP
 #QE
 qe_opts='', # options for Quantum Espresso
-
+#CASTEP
+castep_opts='',
 #CHGNET
 n_opts=2,
-rel=StructOptimizer(),
+rel=None,
 relaxer_opts={
 'fmax':[0.1,0.05],
 'steps':[250,750]
 },
 opt_class=['FIRE','BFGSLineSearch'],
 opt_device='cpu', #Device to use for chgnet optimisation, 'cpu' or 'cuda'
-mode='relax' # set the calculation mode for chgnet, other option is 'single'
+mode='relax', # set the calculation mode for chgnet, other option is 'single'
+
+repose_seed='', #Seed name to use for repose calculation
+repose_command='', #bash command to use to run repose, this should be a string followed by +repose_seed
+repose_devmax=2,
 ):
 	t0=time.time()
 ################################################################################
@@ -198,7 +219,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 	print("#									       #")
 	print("#		       Flexible Unit Structure Engine			       #")
 	print("#				 (FUSE)					       #")
-	print("#				 v2.02            			       #")
+	print("#				 v2.04            			       #")
 	print("#				                          		       #")
 	print("################################################################################")
 	print("\n\n")
@@ -206,7 +227,6 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 	#############################################################################
 	# start up bits / calculations
 	#############################################################################
-	
 	# processing parts of the input file
 	# number of structures we have performed geometry optimisation on during this run
 	itr=0 
@@ -226,7 +246,10 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 	#set the environment variable for spp_path if needed
 	#if spp_path != None:
 	#	os.environ['SPP_PATH']=spp_path
-	
+
+	if not os.path.isdir("plots"):
+		os.mkdir("plots")
+
 	#if needed import spglib
 	if use_spglib==True:
 		#print("I'm using SPGLIB!!!")
@@ -272,7 +295,13 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 	        volume+=((4/3)*math.pi*(temp[list(temp.keys())[0]][-1]**3))
 	
 	ideal_density=mass/volume
-	
+
+	new_structure = None
+	gulp_time = 0
+	fuse_time = 0
+	reinforce_select_time = 0
+	reinforce_update_time = 0
+	start_t = time.time()
 	#############################################################################
 	
 	### compute ap value ########################################################
@@ -315,6 +344,11 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		norm_comp[i]=round( composition[i]/norm_factor,2 )
 		
 	#############################################################################
+
+	# get castep if we need it
+	if 'castep' in calcs:
+		from ase.calculators.castep import Castep
+
 	#############################################################################
 
 	## test call to obtaining a new randomly generated structure in the new data format:
@@ -422,8 +456,6 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 				except:
 					pass
 
-			
-			
 				# additionally, if we're using the backup, we need to clear the structures folder and resore it from the backup
 				os.chdir("../structures")
 				cifs=glob.glob("*.cif")
@@ -488,13 +520,18 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		if write_all_structures == True:
 			if not os.path.isdir("structures"):
 				os.mkdir("structures")		
-		
+				
 		os.chdir("structures")
-		if glob.glob("*.cif") != []:
+		if glob.glob("*") != []:
 			if platform.system()=='Windows':
 				os.system("del *.cif")
+				os.system("del *.p")
+				os.system("del *.npz")
 			if platform.system()=='Linux':
 				os.system("rm *.cif")
+				os.systen("rm *.p")
+				os.system("rm *.npz")
+				
 		os.chdir("../")
 		
 		#check to see if there's a restart folder, if so, clear it
@@ -530,212 +567,32 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 			
 		if platform.system()=='Linux':
 			os.system("rm -r *")
-		os.chdir("../")		
+		os.chdir("../")
 		
-		# starting here, if it's been selected in the input file, go through and run gn-boss to generate starting structures
-		
-		#generate_gn_boss_structures=True, # if set to true, when FUSE is firt launched, it will run gn-boss to generate the pool of referennce structures for this calculation.
-		#gn_boss_command="C:\ProgramData\anaconda3\_conda.exe run -p C:\ProgramData\anaconda3\envs\ML_FUSE python .\get_cifs_for_FUSE.py", # For my machine, I've setup gn-boss in a seperate python environment, this is the command for that version of python
-		#gn_search='tpe', # 'rand' random search, 'tpe' baysian opt, 'pso' particle swarm
-		#gn_max_step=5000, # number of generation attempts for gn-boss
-		#gn_template_path='C:\Users\cc0u5\Documents\csp_installs\ML-FUSE\template', #path to template files for using gn-boss 
-		#gn_zn_range=[1,4], # numbers of formula units to scan with GN-BOSS for generating structures
-		#rank_gn_structures=True, #if true, rank the output of the model using SPPs. this is needed if pull_spp_rank = True above		
-		#clear_previous_gn_structures=True, #if set to True, before starting the calcluation, remove any previous structures from reference structures & gn-boss generated_results.
-		
-		if generate_gn_boss_structures == True:
-			print("Generating structure pool using Gn-Boss ML model")
-			o.write("\nGenerating structure pool using Gn-Boss ML model\n")
-			
-			
-			if clear_previous_gn_structures == True:
-				if os.path.isdir("gn-boss"):
-					#os.chdir("gn-boss")
-					shutil.rmtree("gn-boss") # clear out the previous run.
-					#os.chdir("../")
-			
-					os.chdir(path_to_structures)
-					
-					f_to_remove=glob.glob("*")
-					for w in f_to_remove:
-						os.remove(w)
-						
-					os.chdir("../")
-					os.mkdir("gn-boss")
-					os.chdir("gn-boss")
-			
-				else:
-					os.mkdir("gn-boss")
-					os.chdir("gn-boss")
-			
-			if clear_previous_gn_structures != True:
-				if not os.path.isdir("gn-boss"):
-					os.mkdir("gn-boss")
-					os.chdir("gn-boss")
-			
-			#go fetch the template file
-			#try:
-			shutil.copytree(gn_template_path,'.',dirs_exist_ok=True)
-				#os.system("cp -r "+gn_template_path+"\* .")
-			#except:
-				#os.system("cp -r "+gn_template_path+"* .")
-						
-			os.chdir("chemical_compositions")
-			template=open("template.in",'r').readlines()
-			run_files=[]
-			#for each value of Z build the input file
-			for z in range(gn_zn_range[0],gn_zn_range[-1]+1):
-				run_file=template.copy()
-				form='compound = '
-				total=0
-				for w in list(composition.keys()):
-					form+=w
-					form+=str(composition[w]*(z))
-					total+=composition[w]*(z)
-					form += " "
-				form += "\n"
-				if total <= max_atoms:
-					run_file[2]=form
-				
-				run_file[35]="algorithm = "+gn_search+"\n"
-				run_file[39]="max_step = "+str(gn_max_step)+"\n"
-				
-				run_file2=open("gnoa-input_"+str(z)+".in",'w')
-				for w in run_file:
-					run_file2.write(w)
-					
-				run_file2.close()
-				
-				run_files.append("gnoa-input_"+str(z)+".in")
-			
-			os.remove("template.in")
-			
-			os.chdir("../")
-			#print(os.getcwd())
-			#sys.exit()
-			#now go and run the calculations
-			os.system(gn_boss_command)
-			
-			#collate the results in the reference structures folder
-			os.chdir("results")
-			r_files=glob.glob("*")
-			for w in r_files:
-				if os.path.isdir(w):
-					if not w == "best_structures":
-						os.chdir(w)
-						#print(os.getcwd())
-						#sys.exit()
-						os.chdir("structures")
-						#print(os.getcwd())
-						#sys.exit()
-						to_copy=glob.glob("*.cif")
-						for v in to_copy:
-							if v != 'temp.cif':
-								shutil.copy(v,"../../../../"+path_to_structures+"/.")
-						os.chdir("../../")
-						
-			os.chdir("../../")
-			
-			#print(os.getcwd())
-			#sys.exit()
-			
-			#if required, go through and rank the structures
-			if rank_gn_structures != None:
-				os.chdir(path_to_structures)
-				
-				r_cifs=glob.glob("*.cif")
-				r_results={'file':[],'energy':[],'atoms':[],'converged':[]}
-				
-				if not os.path.isfile("dummy.lib"):
-					fr=open("dummy.lib",'w')
-					fr.close()
-				
-				#get the required spp library
-				temp=read(r_cifs[0])
-				r_elements=[]
-				for w in range(len(temp)):
-					if not temp[w].symbol in r_elements:
-						r_elements.append(temp[w].symbol)
-						
-				#print(r_elements)
-				#sys.exit()
-				if assemble_spp_ == True:
-					assemble_spp(r_elements,spp_path=spp_path)
-				
-				print("Ranking structures from Gn-Boss ML model using SPPs")
-				o.write("\nRanking structures from Gn-Boss ML model using SPPs")
-				
-				for w in range(len(r_cifs)):
-					print(str(w+1)+" of: "+str(len(r_cifs)),end='\r')
-					try:
-						atoms=read(r_cifs[w])
-					except:
-						continue
-					if ranking == 'gulp':
-						try:
-							atoms,energy,converged=run_gulp(atoms=atoms,shel=shel,kwds=r_kwds,opts=r_gulp_opts,lib=r_lib,produce_steps=False,gulp_command=gulp_command,gulp_timeout=gulp_timeout)
-						except:
-							converged=False
-							energy=1.e20
-					if ranking == 'chgnet':
-						try:
-							atoms,energy,converged = run_chgnet(atoms,n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,mode=rank_gn_structures,opt_device=opt_device)
-						except:
-							converged=False
-							energy=1.e20
+		# starting here, go through and run structure generators to generate prebuilt structures, incorporating the choice of which method
+		if len(generator) >= 1:
+			run_generators(o=o,generator=generator,generate_gn_boss_structures=generate_gn_boss_structures,clear_previous_structures=clear_previous_structures,
+					   gn_boss_command=gn_boss_command,gn_search=gn_search,gn_max_step=gn_max_step,gn_template_path=gn_template_path,gn_zn_range=gn_zn_range,
+					   path_to_structures=path_to_structures,composition=composition,max_atoms=max_atoms,generate_airss_structures=generate_airss_structures,
+					   airss_form_units=airss_form_units,airss_num_structures=airss_num_structures,repose_seed=repose_seed,repose_command=repose_command,repose_devmax=repose_devmax)
 
-					if ranking == 'mixed':
-			
-						try:
-							atoms,energy,converged=run_calculators(atoms=atoms,vasp_opts=
-							vasp_opts,kcut=kcut,produce_steps=None,shel=shel,
-							kwds=r_kwds,gulp_opts=r_gulp_opts,lib=r_lib,calcs=r_calcs,dist_cutoff=dist_cutoff,qe_opts=qe_opts,
-							gulp_command=gulp_command,gulp_timeout=gulp_timeout,
-							n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,
-							opt_device=opt_device,mode=rank_gn_structures)
-							
-						except:
-							converged = False
-							energy = 1.e20						
+		# then rank them with spp's, chgnet or a mix of both
+		if rank_structures != None:
+				rank_gen_structures(o=o,ranking=ranking,path_to_structures=path_to_structures,assemble_spp_=assemble_spp_,vasp_opts=vasp_opts,kcut=kcut,
+						produce_steps=None,shel=shel,use_spglib=use_spglib,r_kwds=r_kwds,r_gulp_opts=r_gulp_opts,r_lib=r_lib,r_calcs=r_calcs,dist_cutoff=dist_cutoff,
+						qe_opts=qe_opts,gulp_command=gulp_command,gulp_timeout=gulp_timeout,n_opts=n_opts,relaxer_opts=relaxer_opts,opt_class=opt_class,
+						opt_device=opt_device,spp_path=spp_path,rank_structures=rank_structures,rel=rel,repose_seed=repose_seed,repose_command=repose_command,repose_devmax=repose_devmax)
 
-					energy=energy/len(atoms)
-        
-					r_results['file'].append(r_cifs[w])
-					r_results['energy'].append(energy)
-					r_results['atoms'].append(atoms)
-					r_results['converged'].append(converged)
-        			
-					write(r_cifs[w],atoms)
-        			
-				dat=pandas.DataFrame.from_dict(r_results).sort_values(['energy'],axis=0,ascending=True)
-				dat2=dat.to_dict(orient='list')
-				#print(dat2.keys())
-				table={'file':[],'energy':[]}
-				for j in range(len(dat2[list(dat2.keys())[0]])):
-				    table['file'].append(dat2['file'][j])
-				    table['energy'].append(dat2['energy'][j])
-				    
-				dat3=pandas.DataFrame.from_dict(table)
-				dat3.to_csv("ranking.csv",index=None)
-				    
-				os.chdir("../")	
-				
-			t2=datetime.datetime.now()	
-			if generate_structures_only == True:
-				print("structure generation complete")
-				print("\ntotal time: "+str(t2-t1)+" hours:minutes:seconds")
-				o.write("\ntotal time: "+str(t2-t1)+" hours:minutes:seconds\n")
-				sys.exit()
+		t2=datetime.datetime.now()
+		if generate_structures_only == True:
+			print("structure generation complete")
+			print("\ntotal time: "+str(t2-t1)+" hours:minutes:seconds")
+			o.write("\ntotal time: "+str(t2-t1)+" hours:minutes:seconds\n")
+			sys.exit()
 
-			else:
-				print("structure generation complete")
-				o.write("\ntotal time: "+str(t2-t1)+" hours:minutes:seconds\n")
-
-        #if j == 1:
-           #break					
-			
-			#next bit will be to go through and rank the results!
-				
+		else:
+			print("structure generation complete")
+			o.write("\ntotal time: "+str(t2-t1)+" hours:minutes:seconds\n")
 	
 	#############################################################################
 	# startup bits which we need to do irrespective of restart state
@@ -747,7 +604,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 	o.write("\n#									       #")
 	o.write("\n#			   Flexible Unit Structure Engine		       #")
 	o.write("\n#				     (FUSE)				       #")
-	o.write("\n#				     v2.02				       #")
+	o.write("\n#				     v2.04				       #")
 	o.write("\n#									       #")
 	o.write("\n################################################################################")
 	o.write("\n\n")
@@ -800,23 +657,28 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		if search == 1:
 			print ("Search routine: Basin Hopping")
 			o.write("\nSearch routine: Basin Hopping")
-			
-		#At the moment, these two haven't been implimented	
+
 		if search == 2:
-			print ("Search routine: Basin Hopping with reinforcement learning")
+			print("Search routine: Basin Hopping with reinforcement learning")
 			o.write("\nSearch routine: Basin Hopping with reinforcement learning")
+			from rlcsp import Reinforce, State
+			import sqlite3
+			if clear_previous_db==True:
+				if platform.system()=='Windows':
+					os.system("del *.db")
+				else:
+					os.system('rm *.db')
+
+		# not implemented yet
 		if search == 3:
 			print ("Search routine: Genetic Algorithm")
 			o.write("\nSearch routine: Genetic Algorithm")	
-	
-	#############################################################################
 	
 	#############################################################################
 	# Generate the inintial population of structures
 	#############################################################################
 	
 	# Only generate an initial population if we are starting a fresh calculation
-	
 	if restart == False:
 		generation_complete=False
 		print ("\n\n############################ Generating Initial Population ############################\n\n")
@@ -832,8 +694,15 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		if read_exisiting_structures == True:
 			print ("Looking for user supplied structures")
 			o.write("\nLooking for user supplied structures")
-			os.chdir(path_to_structures)
 			
+			################## CURRENTLY can only read in structures from either gnboss or airss
+
+			if os.path.isdir(path_to_structures):
+				os.chdir(path_to_structures)
+			else:
+				os.mkdir(path_to_structures)
+				os.chdir(path_to_structures)
+
 			cifs=glob.glob("*.cif")
 
 			if len(cifs) > 0:
@@ -856,7 +725,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 					spp_dat=pandas.DataFrame.from_dict(spp_ranks).sort_values(['energy'],axis=0,ascending=True)
 					spp_dat2=spp_dat.to_dict(orient='list')
 					cifs=spp_dat2['file']					
-					
+	
 				if len(cifs) == 1:
 					print ("... found ",str(len(cifs))," structure")
 					o.write("\n... found "+str(len(cifs))+" structure")
@@ -923,14 +792,16 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 						reject = True
 					
 					# check to see if any distances in the structure are shorter than the dist_cutoff value
-					dists=[]
-					for j in range(len(temp)):
-						boundto=list(range(len(temp)))
-						del boundto[j]
-						dists=temp.get_distances(j,boundto,mic=True)
-						if min(dists) < dist_cutoff:
-							reject=True
-							break
+					if len(temp) > 1:
+						
+						dists=[]
+						for j in range(len(temp)):
+							boundto=list(range(len(temp)))
+							del boundto[j]
+							dists=temp.get_distances(j,boundto,mic=True)
+							if min(dists) < dist_cutoff:
+								reject=True
+								break
 					
 					try:
 						write("temp.cif",temp)
@@ -1037,7 +908,9 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 	print("\n")
 	o.write("\n")
 	#############################################################################
-	
+	log_filename = 'log_file.csv'
+	fuse_time += time.time() - start_t
+	start_t = time.time()
 	#############################################################################
 	# Now need to go through and perform geometry optimisation on the initial 
 	# population if any of the structures are not flagged as optimised
@@ -1066,9 +939,59 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		if generation_complete == False:
 			print("\n\n############################ Resuming Initial Population ############################\n")
 			o.write("\n\n############################ Resuming Initial Population ############################\n")
-	
+
+	# try to read in reinforcement learning data
+	if search==2:
+		if restart==True:
+			try:
+				df = pandas.read_csv(log_filename)
+				step = df['step'].max()
+			except pandas.errors.EmptyDataError as e:
+				print(f'Error during reading {log_filename}: {e}')
+				step=0
+
+		if restart==False:
+			log_file = {'step': [],
+						'starting_modules': [],
+						'modules': [],
+						'move_type': [],
+						'energy': [],
+						'mc_outcome': []}
+
+			step = 0
+			out_data = pandas.DataFrame(log_file)
+			out_data.to_csv(log_filename, index=False)
+
+			if os.path.exists("accepted_energies.txt"):
+				os.remove("accepted_energies.txt")
+
+	# more reinforce bits
+	if search == 2:
+		actions=[]
+		for i in list(moves.keys()):
+			for j in range(moves[i]):
+				actions.append(i)
+		#print(actions)
+		#actions = ['1', '2', '3', '4', '5', '6', '7', '9', '10']
+		reinforce_table = reinforce_table + dir_num
+		theta_table = reinforce_theta_table + dir_num
+		reinforce_id = dir_num
+		reinforce = Reinforce(actions=actions,
+							  params_db=params_db,
+							  alpha=alpha,
+							  reinforce_table=reinforce_table,
+							  theta_table=theta_table,
+							  reward_type=Reinforce.change_in_features,
+							  features_set=['energy'],
+							  episode_length=1,
+							  max_energy=0,
+							  reinforce_id=reinforce_id,
+							  debug=reinforce_verbosity,
+							  reg_params=reg_params)
+		reinforce.step_energy_limit = 100
+		old_energy = 0
+
 	#while we have iterations to do so, go through and continue optimising the initial population
-	
 		
 	while generation_complete == False:
 		#first check to see if all are complete
@@ -1146,48 +1069,96 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		
 		if ctype == 'gulp':
 			try:
-				atoms,energy,converged=run_gulp(atoms=atoms,shel=shel,kwds=kwds,opts=gulp_opts,lib=lib,produce_steps=False,gulp_command=gulp_command,gulp_timeout=gulp_timeout)
+				atoms,energy,converged=run_gulp(atoms=atoms,shel=shel,kwds=kwds,opts=gulp_opts,lib=lib,produce_steps=False,gulp_command=gulp_command,gulp_timeout=gulp_timeout,use_spglib=use_spglib)
 			except:
 				converged = False
 				energy = 1.e20
 		
 		if ctype == 'vasp':
 			try:
-				atoms,energy,converged=run_vasp(atoms=atoms,vasp_opts=vasp_opts,kcut=kcut,produce_steps=False,dist_cutoff=dist_cutoff)
+				atoms,energy,converged=run_vasp(atoms=atoms,vasp_opts=vasp_opts,kcut=kcut,produce_steps=False,dist_cutoff=dist_cutoff,use_spglib=use_spglib)
 			except:
 				#print('except')
 				converged = False
 				energy = 1.e20						
+
+		if ctype == 'castep':
+			try:
+				atoms,energy,converged=run_castep(atoms=atoms,castep_opts=castep_opts,dist_cutoff=dist_cutoff,use_spglib=use_spglib)
+			except:
+				converged=False
+				energy = 1.e20
 		
 		if ctype == 'qe':
 			try:
-				atoms,energy,converged=run_qe(atoms=atoms,qe_opts=qe_opts,kcut=kcut,produce_steps=False)
+				atoms,energy,converged=run_qe(atoms=atoms,qe_opts=qe_opts,kcut=kcut,produce_steps=False,use_spglib=use_spglib)
 			except:
 				converged=False
 				energy=1.e20
 		
 		if ctype == 'chgnet':
+			from fuse205.run_chgnet import run_chgnet
 			try:
 				atoms,energy,converged = run_chgnet(atoms,n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,opt_device=opt_device,use_spglib=use_spglib,mode=mode)
-				
 			except:
 				converged=False
 				energy=1.e20
-			
+
+		if ctype == 'orb':
+			from fuse205.run_orb import run_orb
+			try:
+				atoms,energy,converged = run_orb(atoms)
+			except:
+				converged=False
+				energy=1.e20
+
 		if ctype == 'mixed':	
 			
 			try:
 				atoms,energy,converged=run_calculators(atoms=atoms,vasp_opts=
 				vasp_opts,kcut=kcut,produce_steps=None,shel=shel,
 				kwds=kwds,gulp_opts=gulp_opts,lib=lib,calcs=calcs,dist_cutoff=dist_cutoff,qe_opts=qe_opts,
-				gulp_command=gulp_command,gulp_timeout=gulp_timeout,
-				n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,
-				opt_device=opt_device,mode=mode)
+				gulp_command=gulp_command,gulp_timeout=gulp_timeout,castep_opts=castep_opts,
+				n_opts=n_opts,relaxer_opts=relaxer_opts,opt_class=opt_class,
+				opt_device=opt_device,mode=mode,use_spglib=use_spglib,rel=rel,repose_seed=repose_seed,repose_command=repose_command,repose_devmax=repose_devmax)
 				
 			except:
 				converged = False
 				energy = 1.e20
 		
+		if ctype == 'repose':
+			try:
+				write(repose_seed+".cell",atoms)	
+				os.system(repose_command+" "+repose_seed+" > repose.out")
+				try:
+					output=open("repose.out",'r').readlines()
+				except:
+					output=None
+				energy=None
+				dev=0
+				deviation=None
+				if output!= None:
+					for z in output:
+						if "Enthalpy:" in z:
+								energy=z
+						if "Deviation:" in z:
+								deviation=z
+    				
+					energy = float(energy.split(":")[-2])
+					if deviation != None:
+						dev = float(deviation.split(":")[-1])
+					atoms=read(repose_seed+"-out.cell")
+					converged=True
+      
+			except:
+				converged=False
+				energy=1.e20
+			
+			if dev > repose_devmax:
+				print("\n\ndeviation = ",str(dev),"\n\n")
+				converged=False
+				energy=1.e20
+				
 		#make sure we have the same number of atoms
 		if len(atoms) != iat:
 			converged = False
@@ -1209,14 +1180,19 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		if distances <= dist_cutoff:
 			converged = False
 			energy = 1.e20
-		
-		
-		
+
 		energy = energy/len(atoms)
 		energy = float(Decimal(energy).quantize(Decimal(str(e_prec))))
 		t2a=time.time()
 		initial_population[keys_to_complete[0]]['atoms']=atoms
-		
+
+		if search == 2:
+			if energy < 0:
+				if old_energy == 0:
+					old_energy = energy
+				reinforce.update_f_scaling(State(old_energy), State(energy), '7', reinforce.alpha)
+				old_energy = energy
+
 		#update the modules etc. to reflect the optimised atoms object
 		write("temp.cif",atoms)
 		temp_structure=extract_module(["temp.cif"],bondtable)
@@ -1248,7 +1224,11 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		o.flush()
 		#write out the structure we have just relaxed
 		#try:
-		write(str("structures/"+str("I-")+str('{0:0=7n}'.format(int(keys_to_complete[0]))+".cif")),atoms)
+		if write_all_structures==True:
+			if write_cifs==True:
+				write(str("structures/"+str("I-")+str('{0:0=7n}'.format(int(keys_to_complete[0]))+".cif")),atoms)
+			pickle.dump(initial_population[keys_to_complete[0]],open(f"structures/I-{int(keys_to_complete[0])}.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
+		
 		#os.chdir("structures")
 		#print(keys_to_complete[0])
 		#write("test.cif",atoms)
@@ -1274,10 +1254,10 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		#write out output / restart files for all of the variables we've got so far:
 		os.chdir("restart")
 		#things to write out: search, what else? will need to create something to plot out energy graphs as well?
-		pickle.dump(initial_population,open("initial_population.p",'wb'))
+		pickle.dump(initial_population,open("initial_population.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 		pickle.dump(using_prebuilt,open("using_prebuilt.p",'wb'))
 		try:
-			pickle.dump(pre_built_structures,open("pre_built_structures.p",'wb'))
+			pickle.dump(pre_built_structures,open("pre_built_structures.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 		except:
 			pass
 		pickle.dump(r,open("r.p",'wb'))
@@ -1287,8 +1267,8 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 		pickle.dump(sa,open("sa.p",'wb'))
 		pickle.dump(search,open("search.p",'wb'))
 		pickle.dump(energies,open("energies.p",'wb'))
-		search_generation_complete=True # make sure that we always go onto start a new generation
-		pickle.dump(search_generation_complete,open("search_generation_complete.p",'wb'))
+		#search_generation_complete=True # make sure that we always go onto start a new generation
+		pickle.dump(search_generation_complete,open("search_generation_complete.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 		if search == 1 or 2:
 			pickle.dump(moves,open("moves.p",'wb'))
 
@@ -1304,28 +1284,44 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 	#	If initial generation complete, print a summary of the lowest energy & which structure it is ###################
 	###################################################################################################################
 	if generation_complete == True:
+		#Need to insert something in here, only do this if the search generation is complete as well?
 		print("Generation completed: ",end=' ')
 		o.write("\n\nGeneration completed: ")
 		print("Lowest energy structure is: " + str(list(energies.values()).index(min(list(energies.values())))) + " with energy: "+str(round(min(list(energies.values())),6)) +" eV/atom")
 		o.write("Lowest energy structure is: " + str(list(energies.values()).index(min(list(energies.values())))) + " with energy: "+str(round(min(list(energies.values())),6)) +" eV/atom\n")
 		
 		#write out the current best structure as a cif
-		write("current_structure.cif",initial_population[str(list(energies.values()).index(min(list(energies.values()))))]['atoms'])
-		write("global_minimum.cif",initial_population[str(list(energies.values()).index(min(list(energies.values()))))]['atoms'])
+		if search_generation_complete==True:
+			write("current_structure.cif",initial_population[str(list(energies.values()).index(min(list(energies.values()))))]['atoms'])
+			write("global_minimum.cif",initial_population[str(list(energies.values()).index(min(list(energies.values()))))]['atoms'])
 		
 		### if search == 1 or 2, set the current structure to be the lowest from the initial generation
-		if search == 1 or 2:
-			current_structure = initial_population[str(list(energies.values()).index(min(list(energies.values()))))].copy()
+		if search == 1 or search == 2:
+			try:
+				current_structure = initial_population[str(list(energies.values()).index(min(list(energies.values()))))].copy()
+			except:
+				current_structure = next_generation[str(list(energies.values()).index(min(list(energies.values()))))].copy()
 		#set the blank next_geneation dictionary
-		next_generation={}
+		if search_generation_complete==True:
+			next_generation={}
+		if restart==False:
+			next_generation={}
 		prev_min=min(list(energies.values()))
 		calc_converged=False
 
 ######################################################################################################################
 # Move into using the search routines ################################################################################
 ######################################################################################################################
+
+	if search == 2:
+		actions_counter = {m: 0 for m in actions}
+		max_failed_actions = 500
+		action_executed = True
+		excluded_actions = []
+		selected_move = '1'
+
 ##Unlike the previous version of FUSE, we will just continue adding structures to the "initial_population" in order to
-#keep everything together
+#keep everything together... from version 205, will split back out, as with large numbers of structures, this appears to start slowing the code down considerably
 
 			
 	print  ("\n\n###########################  Running search rountine  #################################\n\n")
@@ -1369,7 +1365,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 						start_fus=start_atoms/sum(list(composition.values()))
 						#print("start atoms: ",start_atoms)
 						#print("start fus: ",start_fus)
-						
+
 						#next_generation[str(structure_number)],move,pre_built_structures=make_basin_move(
 						trial,move,pre_built_structures=make_basin_move(
 						
@@ -1383,11 +1379,10 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 							#bits for changing unit cell shape:
 							cubic_solutions,tetragonal_solutions,hexagonal_solutions,orthorhombic_solutions,monoclinic_solutions,
 							max_atoms,max_ax,vac_ratio,using_prebuilt,pre_built_structures,max_fus,
-							atoms_per_fu,
-							imax_atoms,use_spglib,initial_population
+							atoms_per_fu,ap,
+							imax_atoms,use_spglib,initial_population,search
 							)
-						if trial == None:
-							continue
+
 						#print("end atoms", len(trial['atoms']) )
 						#print("end fus",len(trial['atoms'])/sum(list(composition.values())))
 						t_atoms=trial['atoms'].copy()
@@ -1408,8 +1403,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 							next_generation[str(structure_number)]=trial.copy()
 						else:
 							continue
-						
-						
+
 						structure_number+=1
 						used_moves.append(move)
 						
@@ -1420,23 +1414,110 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 					search_generation_complete = False
 					
 				if search == 2: # Basin hopping routine with reinforcement learning
-					pass
+					while built < search_gen_bh:
+						old_state = State(current_structure['energy'])
+						fuse_time += time.time() - start_t
+						start_t = time.time()
+						if action_executed or actions_counter[selected_move] >= max_failed_actions:
+							if action_executed:
+								actions_counter = {m: 0 for m in actions}
+								excluded_actions = []
+								if built == search_gen_bh:
+									action_executed = False
+							elif selected_move not in excluded_actions:
+								excluded_actions.append(selected_move)
+							if len(excluded_actions) >= len(reinforce.actions):
+								excluded_actions = []
+							# treat move 5 and 11 separately as we can say prior the move that it can be done
+							if '11' not in excluded_actions and len(current_structure['atoms']) * 2 > max_atoms:
+								excluded_actions.append('11')
+							if '12' not in excluded_actions and len(current_structure['atoms']) * 3 > max_atoms:
+								excluded_actions.append('12')
+							#if '4' not in excluded_actions and current_structure[2][4] <= 2:
+							#	excluded_actions.append('4')
+
+							selected_move = reinforce.select_action(old_state, excluded_actions=excluded_actions)
+							if reinforce_verbosity == True:
+								print(f'Move {selected_move}, attempts {actions_counter[selected_move]}')
+						else:
+							actions_counter[selected_move] += 1
+							if actions_counter[
+								selected_move] > max_failed_actions and selected_move not in excluded_actions:
+								excluded_actions.append(selected_move)
+							if reinforce_verbosity == True:
+								print(f'Move {selected_move}, attempts {actions_counter[selected_move]}')
+
+						reinforce_select_time += time.time() - start_t
+						start_t = time.time()
+						trial, move, pre_built_structures = make_basin_move(
+
+							current_structure,
+							{int(selected_move):1},
+							bondtable,
+							grid_spacing,
+							exclusion,
+							# variables needed for the error checking part of the function
+							ideal_density, density_cutoff, check_bonds, btol, system_type, fu, composition, check_distances,
+							dist_cutoff,
+							# bits for changing unit cell shape:
+							cubic_solutions, tetragonal_solutions, hexagonal_solutions, orthorhombic_solutions,
+							monoclinic_solutions,
+							max_atoms, max_ax, vac_ratio, using_prebuilt, pre_built_structures, max_fus,
+							atoms_per_fu,ap,
+							imax_atoms, use_spglib, 
+							#initial_population, 
+							search
+						)
+
+						if trial is False:
+							print(f'{selected_move} is not allowed')
+							actions_counter[selected_move] = max_failed_actions
+							continue
+
+						t_atoms = trial['atoms'].copy()
+						trial_fus = len(t_atoms) / sum(list(composition.values()))
+
+						counts = []
+						correct = False
+						if float(trial_fus).is_integer():
+							# now need to check each species
+							symbols = t_atoms.get_chemical_symbols()
+							for x in list(composition.keys()):
+								num1 = symbols.count(x)
+								counts.append(num1 / composition[x])
+							if all(x == trial_fus for x in counts):
+								correct = True
+
+						if correct == True:
+							next_generation[str(structure_number)] = trial.copy()
+						else:
+							continue
+
+						structure_number += 1
+						used_moves.append(move)
+
+						print("\nmove :", move, ": ", move_des[move])
+						o.write(str("\nmove :" + str(move) + ": " + str(move_des[move])))
+						built += 1
+
+					search_generation_complete = False
 				
 				if search == 3: # Genetic Algo
 					pass
-   		
+   					
 			if search_generation_complete == False: # while the generation is not completed, go through and find the next structure to optimise & do it!
 				# first check to see if all structures are complete
 				ncomplete=0
 				keys_to_complete=[]
+				
 				for x in list(next_generation.keys()):
 					if next_generation[x]['optimised?']==True:
 						ncomplete+=1
 					else:
 						keys_to_complete.append(x)
-				
-				if ncomplete == len(list(next_generation.keys())):
-					search_generation_complete = True
+
+				if ncomplete == len(list(next_generation.keys())):   # possible this is causing it to reset to a fresh generation on restart, even if it's not complete?
+					search_generation_complete = True                 # possible this is causing it to reset to a fresh generation on restart, even if it's not complete?
 					continue
 					
 				#before running any structures, create a backup of the restart files
@@ -1477,20 +1558,17 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 						temp2.cell=lattice
 						temp2.set_scaled_positions(positions)
 						atoms=temp2.copy()
-						
 					except:
 						pass
 
 				if ratt_dist > 0:
 					atoms.rattle(ratt_dist)
 
-
-				
 				if ctype == 'gulp':
 					try:
-						print("len atoms start:",len(atoms))
+						#print("len atoms start:",len(atoms))
 						atoms,energy,converged=run_gulp(atoms=atoms,shel=shel,kwds=kwds,opts=gulp_opts,lib=lib,produce_steps=False,gulp_command=gulp_command,gulp_timeout=gulp_timeout)
-						print("len atoms end:",len(atoms))
+						#print("len atoms end:",len(atoms))
 					except:
 						converged = False
 						energy = 1.e20
@@ -1503,43 +1581,90 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 						converged = False
 						energy = 1.e20						
 				
+				if ctype == 'castep':
+					try:
+						atoms,energy,converged=run_castep(atoms=atoms,castep_opts=castep_opts,dist_cutoff=dist_cutoff,use_spglib=use_spglib)
+					except:
+						converged = False
+						energy = 1.e20
+
 				if ctype == 'qe':
 					try:
-						atoms,energy,converged=run_qe(atoms=atoms,qe_opts=qe_opts,kcut=kcut,produce_steps=False)
+						atoms,energy,converged=run_qe(atoms=atoms,qe_opts=qe_opts,kcut=kcut,produce_steps=False,use_spglib=use_spglib)
 					except:
 						converged=False
 						energy=1.e20
 
 				if ctype == 'chgnet':
+					from fuse205.run_chgnet import run_chgnet
 					try:
-						atoms,energy,converged = run_chgnet(atoms,n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,opt_device=opt_device,mode=mode)
+						atoms,energy,converged = run_chgnet(atoms,n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,opt_device=opt_device,mode=mode,use_spglib=use_spglib)
 						
 					except:
 						converged=False
 						energy=1.e20
 
+				if ctype == 'orb':
+					from fuse205.run_orb import run_orb
+					try:
+						atoms, energy, converged = run_orb(atoms)
+					except:
+						converged = False
+						energy = 1.e20
 
-				if ctype == 'mixed':	
-					
+				if ctype == 'mixed':
 					try:
 						atoms,energy,converged=run_calculators(atoms=atoms,vasp_opts=
 						vasp_opts,kcut=kcut,produce_steps=None,shel=shel,
 						kwds=kwds,gulp_opts=gulp_opts,lib=lib,calcs=calcs,dist_cutoff=dist_cutoff,qe_opts=qe_opts,
-						gulp_command=gulp_command,gulp_timeout=gulp_timeout,
-						n_opts=n_opts,rel=rel,relaxer_opts=relaxer_opts,opt_class=opt_class,
-						opt_device=opt_device,mode=mode)
+						gulp_command=gulp_command,gulp_timeout=gulp_timeout,castep_opts=castep_opts,
+						n_opts=n_opts,relaxer_opts=relaxer_opts,opt_class=opt_class,
+						opt_device=opt_device,mode=mode,use_spglib=use_spglib,rel=rel,repose_seed=repose_seed,repose_command=repose_command,repose_devmax=repose_devmax)
 						
 					except:
 						converged = False
 						energy = 1.e20
-				
+
+				if ctype == 'repose':
+					try:
+						write(repose_seed+".cell",atoms)	
+						os.system(repose_command+" "+repose_seed+" > repose.out")
+						try:
+							output=open("repose.out",'r').readlines()
+						except:
+							output=None
+						energy=None
+						dev=0
+						deviation=None
+						if output!= None:
+							for z in output:
+								if "Enthalpy:" in z:
+										energy=z
+								if "Deviation:" in z:
+										deviation=z
+    						
+							energy = float(energy.split(":")[-2])
+							if deviation != None:
+								dev = float(deviation.split(":")[-1])
+							atoms=read(repose_seed+"-out.cell")
+							converged=True
+      		
+					except:
+						converged=False
+						energy=1.e20
+					
+					if dev > repose_devmax:
+						print("\n\ndeviation = ",str(dev),"\n\n")
+						converged=False
+						energy=1.e20
+						
+
 				#check to make sure we still have the correct number of atoms!
 				if len(atoms) != iat:
 					converged = False
 					energy = 1.e20
 				
-				#check for any unphysical distances:	
-								
+				#check for any unphysical distances:
 				temp_atoms=atoms.repeat([2,2,2])
 				#distances=min(get_distances(new_atoms=atoms))
 				#print (distances)
@@ -1555,7 +1680,6 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 					converged = False
 					energy = 1.e20
 
-				
 				energy = energy/len(atoms)
 				energy = float(Decimal(energy).quantize(Decimal(str(e_prec))))	
 				t2a=time.time()
@@ -1577,8 +1701,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 						os.remove("temp.cif")
 						converged = False
 						energy = 1.e20
-				 
-				 
+
 				 
 					next_generation[keys_to_complete[0]]['modules']=temp_structure['modules']
 					next_generation[keys_to_complete[0]]['sub module cell']=temp_structure['sub module cell']
@@ -1591,13 +1714,46 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 				next_generation[keys_to_complete[0]]['optimised?']=True
 				next_generation[keys_to_complete[0]]['converged']=converged
 
+				#update rl tables here
+				if len(glob.glob("structures/*.p")) % rl_interval == 0 or len(glob.glob("structures/*.p")) < rl_interval:
+					if search == 2:
+						print("\n\nupdating RLCSP data\n\n")
+						old_state = State(current_structure['energy'])
+						temp_energies=[]
+						for e in energies.values():
+							temp_energies.append(e)
+						del temp_energies[-1]
+						unique_energy = energy not in temp_energies
+						if energy != next_generation[keys_to_complete[0]]['energy']:
+							print('DEBUG')
+						fuse_time += time.time() - start_t
+						start_t = time.time()
+						opt='False'
+						if '-' in str(energy):
+							opt='True'
+						new_state = State(energy, unique=unique_energy)
+						reinforce.update(used_moves[(int(keys_to_complete[0])-int(initial_gen))], old_state, new_state, opt)
+						action_executed = True
+						reinforce_update_time += time.time() - start_t
+						start_t = time.time()
+						if reinforce_verbosity == True:
+							o.write(f'Step {step}. Time elapsed for fuse: {fuse_time}, gulp: {gulp_time}, '
+									f'reinforce_select: {reinforce_select_time}, '
+									f'reinforce_update: {reinforce_update_time}\n')
+
+
 				#Print to output file where we're up to:
 				o.write(str("\n"+str(keys_to_complete[0])+"	 {0:=6.6n}   eV/atom".format(float(energy)).rjust(25)))
 				#write out the cif for the structure we've just relaxed
-				try:
-					write(str("structures/"+str("S-")+str('{0:0=7n}'.format(int(keys_to_complete[0]))+".cif")),atoms)
-				except:
-					write(str("structures/"+str("S-")+str('{0:0=7n}'.format(int(keys_to_complete[0]))+".cif")),backup_atoms)
+				if write_all_structures==True:
+					if write_cifs==True:
+						try:
+							write(str("structures/"+str("S-")+str('{0:0=7n}'.format(int(keys_to_complete[0]))+".cif")),atoms)
+						except:
+							write(str("structures/"+str("S-")+str('{0:0=7n}'.format(int(keys_to_complete[0]))+".cif")),backup_atoms)
+						
+					pickle.dump(next_generation[keys_to_complete[0]],open(f"structures/S-{int(keys_to_complete[0])}.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)	
+					
 				#set this so that we can record it for the graph:
 				accepted=False
 				#check to see if the generation has been completed & we need to try the acceptance
@@ -1619,14 +1775,15 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 							lowest[0]=x
 					
 					#need to work out the minimum energy prior to this generation:
-					tes=[]
-					for x in list(initial_population.keys()):
-						tes.append(initial_population[x]['energy'])
-					prev_min=min(tes)
+					#tes=[]
+					#for x in list(initial_population.keys()):grea
+					#	tes.append(initial_population[x]['energy'])
+					#prev_min=min(tes)
+					
+					prev_min=graph_output['global minimum energy'][-1].copy()
 					
 					tes = []
-					
-					
+
 					gen_min={list(next_generation.keys())[0] : next_generation[list(next_generation.keys())[0]].copy() }
 						
 					for x in list(next_generation.keys()):
@@ -1634,27 +1791,25 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 							gen_min ={x: next_generation[x].copy()}
 					
 					#print ("generation minimum: ",gen_min)
-					
-					
 					del tes
 					dE_glob=gen_min[list(gen_min.keys())[0]]['energy']-prev_min
 					dE_glob=float(Decimal(str(dE_glob)).quantize(Decimal(str(e_prec))))
 					
 					dE_curr=gen_min[list(gen_min.keys())[0]]['energy']-current_structure['energy']
 					dE_curr=float(Decimal(str(dE_curr)).quantize(Decimal(str(dE_curr))))
-				
 					# MC accept / reject step:
 					
 					accept_move=False
 					accepted=False
-					
+					mc_output = 'R'
+
 					if dE_curr < 0.: # if we have a downhill move, we have to accept it
 						accept_move=True
 						accepted=True
 						current_structure=gen_min[list(gen_min.keys())[0]].copy()
 						write("current_structure.cif",current_structure['atoms'])
-		
 
+						mc_output = 'A'
 						#reset the counts since a downhill move
 						ca=0
 						sa=0
@@ -1681,7 +1836,9 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 								accepted=True
 								current_structure=gen_min[list(gen_min.keys())[0]].copy()
 								write("current_structure.cif",current_structure['atoms'])
-						
+								mc_output = 'mcA'
+
+						mc_output = 'cR'
 						#update r, ca and sa
 						r+=search_gen_bh
 						ca+=search_gen_bh
@@ -1697,12 +1854,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 					calc_converged=False
 					if r >= rmax:
 						calc_converged=True
-					
-					#print(current_structure)
-					
-					
-					
-					
+
 					print("Generation completed")
 					o.write("\nGeneration completed")
 					print(str("E = "+str("{0: .5e}").format(float(lowest[1])) + " dE vs. global = " + str("{0: .4e}").format(float(dE_glob)).rjust(7)+" r: "+str(r).rjust(4))+"	 T = "+str("{0:.5f}").format(T),end='\n')
@@ -1715,7 +1867,11 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 				
 				
 				#graph_output={'move':[],'type':[],'step':[],'energy':[],'temperature':[],'current energy':[],'global minimum energy':[],'structure file name':[],'accepted?':[] }		
-				graph_output['move'].append(move)
+				#print(used_moves)
+				move_pos=int(keys_to_complete[0])-initial_gen
+				#print("move_pos: ",move_pos)
+				#print(keys_to_complete)
+				graph_output['move'].append(used_moves[move_pos]) 
 				graph_output['type'].append('S')
 				graph_output['step'].append(keys_to_complete[0])
 				graph_output['energy'].append(energy)
@@ -1724,16 +1880,14 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 				graph_output['global minimum energy'].append(prev_min)
 				graph_output['structure file name'].append(str( str("S-")+str('{0:0=7n}'.format(int(keys_to_complete[0]))+".cif") ) )
 				graph_output['accepted?'].append(str(accepted))
-
-				
 				
 				#write out output / restart files for all of the variables we've got so far:
 				os.chdir("restart")
 				#things to write out: search, what else? will need to create something to plot out energy graphs as well?
-				pickle.dump(initial_population,open("initial_population.p",'wb'))
+				pickle.dump(initial_population,open("initial_population.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 				pickle.dump(using_prebuilt,open("using_prebuilt.p",'wb'))
 				try:
-					pickle.dump(pre_built_structures,open("pre_built_structures.p",'wb'))
+					pickle.dump(pre_built_structures,open("pre_built_structures.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 				except:
 					pass
 				pickle.dump(r,open("r.p",'wb'))
@@ -1742,23 +1896,31 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 				pickle.dump(T0,open("T0.p",'wb'))
 				pickle.dump(sa,open("sa.p",'wb'))
 				pickle.dump(search,open("search.p",'wb'))
-				pickle.dump(energies,open("energies.p",'wb'))
-				pickle.dump(search_generation_complete,open("search_generation_complete.p",'wb'))
+				pickle.dump(energies,open("energies.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
+				pickle.dump(search_generation_complete,open("search_generation_complete.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 				if search == 1 or 2:
-					pickle.dump(moves,open("moves.p",'wb'))
-					pickle.dump(used_moves,open("used_moves.p",'wb'))
-				pickle.dump(next_generation,open("next_generation.p",'wb'))
+					pickle.dump(moves,open("moves.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
+					pickle.dump(used_moves,open("used_moves.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
+				pickle.dump(next_generation,open("next_generation.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
       		
-				pickle.dump(graph_output,open("graph_output.p",'wb'))
+				pickle.dump(graph_output,open("graph_output.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 				pandas.DataFrame.from_dict(graph_output).to_csv("graph_output.csv",index=None)
       		
 				os.chdir("../")
 								
 				if calc_converged==True:
-					print("\n\n*** BH rountine converged, stopping calculation ***\n")
-					o.write("\n\n\n*** BH rountine converged, stopping calculation ***\n")
+					print("\n\n*** BH routine converged, stopping calculation ***\n")
+					o.write("\n\n\n*** BH routine converged, stopping calculation ***\n")
 					break
-				
+
+				if target_energy=='':
+					pass
+				else:
+					if 0 > target_energy >= float(min(energies.values())):
+						print('Target energy met')
+						o.write('\nTarget Energy Met\n')
+						break
+
 				#check to see if a stop file has been written:
 				if os.path.isfile("stop.txt"):
 					print("\n\n ***** STOP file found, exiting job ***** \n")
@@ -1768,11 +1930,37 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 				
 				itr+=1
 
+	if plot_rl_graphs==True:
+		if search ==2:
+			if params_db['database'] != ':MEMORY:':
+				from fuse205.plot_rl import plot_rl_graph
+				ini_pop=0
+				file=pickle.load(open('restart/initial_population.p','rb'))
+				for i in range(initial_gen):
+					if '-' in str(file[str(i)]['energy']):
+						ini_pop+=1
 
+				os.chdir('plots')
+				try:
+					plot_rl_graph(actions=actions, ini_pop=ini_pop,
+								  params_db=params_db,
+								  alpha=alpha,
+								  reinforce_table=reinforce_table,
+								  theta_table=theta_table,
+								  reward_type=Reinforce.change_in_features,
+								  features_set=['energy'],
+								  episode_length=1,
+								  max_energy=0,
+								  reinforce_id=reinforce_id,
+								  reinforce_verbosity=reinforce_verbosity,
+								  excluded_actions=excluded_actions,
+								  h_type=reg_params['h_type'],
+								  reg_params=reg_params)
+				except:
+					pass
+				os.chdir('../')
 
-
-
-#wrap up things: printout structure number and energy of current minimum & time taken
+	#wrap up things: printout structure number and energy of current minimum & time taken
 	print("\n\n################################# Calculation finished ##############################\n")
 	o.write("\n\n################################# Calculation finished ##############################\n")
 	
@@ -1780,12 +1968,16 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 	o.write("\nLowest energy structure is: " + str(list(energies.values()).index(min(list(energies.values())))) + " with energy: "+str(round(min(list(energies.values())),6)) +" eV/atom\n")
 
 	#copy the graph output file to the main directory
+	os.chdir('plots')
 	try:
-		shutil.copy("restart/graph_output.csv",".")
+		
+		shutil.copy("../restart/graph_output.csv",".")
 		if output_graph_at_end == True:
-			plot_graph(search=1)
+			plot_graph(search=1,initial_population=initial_population)
+		
 	except:
 		pass
+	os.chdir('../')
 	
 	times=[]
 	for x in list(initial_population.keys()):
@@ -1809,6 +2001,8 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 	
 	#close the output file and exit
 	o.close()
+	#print(current_structure)
+	pickle.dump(current_structure,open("current_structure.p",'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 	sys.exit()
 	
 # next things to do:
@@ -1837,7 +2031,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 
 #	13. random new structure with upto the same number of fus as we have currently - DONE
 #	14. random new structure, allowing the use of any remaining pre-built structures - DONE
-
+# 	15. backtrack to a previous structure & apply a new move - TODO
 
 #	basin hopping with RLCSP
 #	GA

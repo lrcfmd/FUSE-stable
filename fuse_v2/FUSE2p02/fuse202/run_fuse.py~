@@ -1386,8 +1386,7 @@ mode='relax' # set the calculation mode for chgnet, other option is 'single'
 							atoms_per_fu,
 							imax_atoms,use_spglib,initial_population
 							)
-						if trial == None:
-							continue
+						
 						#print("end atoms", len(trial['atoms']) )
 						#print("end fus",len(trial['atoms'])/sum(list(composition.values())))
 						t_atoms=trial['atoms'].copy()

@@ -2023,13 +2023,16 @@ def make_basin_move(current_structure,moves,bondtable,grid_spacing,exclusion,ide
 	#sys.exit()
 	
 	#print("swapped atoms: ",len(atoms))
-
-	write("temp.cif",atoms)
-	structure=extract_module(["temp.cif"],bondtable)
-	structure['optimised?']=False
-	structure['energy']=0.0
-	structure['converged']=False
-	os.remove("temp.cif")
+	try:
+		write("temp.cif",atoms)
+		structure=extract_module(["temp.cif"],bondtable)
+		structure['optimised?']=False
+		structure['energy']=0.0
+		structure['converged']=False
+		os.remove("temp.cif")
+	except:
+		structure = None
+		continue
 	# just check we've got everything
 	
 	#print("'modules'          ", structure['modules']          )
